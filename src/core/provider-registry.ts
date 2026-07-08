@@ -1,5 +1,11 @@
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
-import type { EmbeddingModel, LanguageModel } from 'ai';
+import type {
+  EmbeddingModel,
+  ImageModel,
+  LanguageModel,
+  SpeechModel,
+  TranscriptionModel,
+} from 'ai';
 import { AI_MODULE_OPTIONS } from '../ai.constants.js';
 import type {
   AiModuleOptions,
@@ -14,6 +20,14 @@ type ProviderName = 'openai' | 'anthropic' | 'google';
 interface AiSdkProvider {
   languageModel(modelId: string): LanguageModel;
   textEmbeddingModel?(modelId: string): EmbeddingModel<string>;
+  // ProviderV2 standard multimodal methods.
+  imageModel?(modelId: string): ImageModel;
+  speechModel?(modelId: string): SpeechModel;
+  transcriptionModel?(modelId: string): TranscriptionModel;
+  // Shorthands exposed by some concrete providers (e.g. openai).
+  image?(modelId: string): ImageModel;
+  speech?(modelId: string): SpeechModel;
+  transcription?(modelId: string): TranscriptionModel;
 }
 
 /**
@@ -76,6 +90,70 @@ export class ProviderRegistry implements OnModuleInit {
       );
     }
     return provider.textEmbeddingModel(modelId);
+  }
+
+  /** Resolves an image-generation model (default `defaultImageModel`). */
+  getImageModel(model?: string | ImageModel): ImageModel {
+    if (model && typeof model !== 'string') {
+      return model;
+    }
+    return this.resolveMultimodal<ImageModel>(
+      model,
+      this.options.defaultImageModel,
+      ['imageModel', 'image'],
+      'image generation',
+    );
+  }
+
+  /** Resolves a speech (text-to-speech) model (default `defaultSpeechModel`). */
+  getSpeechModel(model?: string | SpeechModel): SpeechModel {
+    if (model && typeof model !== 'string') {
+      return model;
+    }
+    return this.resolveMultimodal<SpeechModel>(
+      model,
+      this.options.defaultSpeechModel,
+      ['speechModel', 'speech'],
+      'speech',
+    );
+  }
+
+  /** Resolves a transcription (speech-to-text) model. */
+  getTranscriptionModel(
+    model?: string | TranscriptionModel,
+  ): TranscriptionModel {
+    if (model && typeof model !== 'string') {
+      return model;
+    }
+    return this.resolveMultimodal<TranscriptionModel>(
+      model,
+      this.options.defaultTranscriptionModel,
+      ['transcriptionModel', 'transcription'],
+      'transcription',
+    );
+  }
+
+  /**
+   * Shared resolution for multimodal models: resolves the provider, then calls
+   * the first available factory method (standard name, then shorthand).
+   */
+  private resolveMultimodal<T>(
+    model: string | undefined,
+    fallback: string | undefined,
+    methods: Array<keyof AiSdkProvider>,
+    capability: string,
+  ): T {
+    const { name, provider, modelId } = this.resolve(model, fallback);
+    for (const method of methods) {
+      const fn = provider[method];
+      if (typeof fn === 'function') {
+        return (fn as (id: string) => T).call(provider, modelId);
+      }
+    }
+    throw new Error(
+      `Provider "${name}" does not support ${capability}. Configure a provider ` +
+        `that does (e.g. openai).`,
+    );
   }
 
   private resolve(

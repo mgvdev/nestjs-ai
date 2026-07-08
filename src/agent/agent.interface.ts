@@ -1,6 +1,7 @@
 import type { FinishReason, LanguageModelUsage, StepResult } from 'ai';
 import type { ZodType } from 'zod';
 import type { AiMessage } from '../messages/message.types.js';
+import type { PromptRef } from '../prompts/prompt.types.js';
 
 /**
  * Per-call overrides for an agent `.run()` / `.stream()`.
@@ -10,6 +11,8 @@ export interface AgentRunOptions {
   model?: string;
   /** Override the agent's system prompt for this call. */
   system?: string;
+  /** Resolve the system prompt from the PromptRegistry (overrides `system`). */
+  systemPrompt?: PromptRef;
   /**
    * Conversation id. When set, prior messages are loaded from the
    * `ConversationStore` before the call and the new exchange is persisted after.

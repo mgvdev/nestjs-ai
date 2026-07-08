@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/typeorm.ts'],
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
@@ -13,6 +13,9 @@ export default defineConfig({
   external: [
     '@nestjs/common',
     '@nestjs/core',
+    '@nestjs/event-emitter',
+    '@nestjs/typeorm',
+    'typeorm',
     'ai',
     'zod',
     'reflect-metadata',

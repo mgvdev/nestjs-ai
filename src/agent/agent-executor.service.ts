@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   generateObject,
   generateText,
@@ -15,9 +15,14 @@ import {
 } from '../ai.constants.js';
 import type { AiModuleOptions } from '../interfaces/ai-module-options.interface.js';
 import type { ConversationStore } from '../memory/conversation-store.interface.js';
-import { type AiInput, toMessages } from '../messages/message.types.js';
+import { type AiInput, type AiMessage, toMessages } from '../messages/message.types.js';
 import { ProviderRegistry } from '../core/provider-registry.js';
 import { ToolRegistry } from '../tools/tool.registry.js';
+import { AiEventEmitter } from '../observability/ai-event-emitter.js';
+import { AI_EVENTS } from '../observability/ai-events.js';
+import { GuardrailRegistry } from '../observability/guardrail.registry.js';
+import type { GuardrailContext } from '../observability/guardrail.interface.js';
+import { PromptRegistry } from '../prompts/prompt-registry.service.js';
 import type { AgentOptions } from './agent.metadata.js';
 import type { AgentResult, AgentRunOptions } from './agent.interface.js';
 
@@ -33,6 +38,9 @@ export class AgentExecutorService {
     private readonly toolRegistry: ToolRegistry,
     @Inject(CONVERSATION_STORE) private readonly store: ConversationStore,
     @Inject(AI_MODULE_OPTIONS) private readonly options: AiModuleOptions,
+    @Optional() private readonly events?: AiEventEmitter,
+    @Optional() private readonly guardrails?: GuardrailRegistry,
+    @Optional() private readonly prompts?: PromptRegistry,
   ) {}
 
   /** Runs an agent to completion and returns its result. */
@@ -42,36 +50,83 @@ export class AgentExecutorService {
     opts: AgentRunOptions = {},
   ): Promise<AgentResult<T>> {
     const meta = this.readMetadata(agent);
+    const agentName = agent.constructor?.name ?? 'AiAgent';
     const model = this.providers.getLanguageModel(opts.model ?? meta.model);
-    const system = opts.system ?? meta.system;
+    const system = this.resolveSystem(opts, meta);
     const schema = opts.schema ?? meta.output;
     const maxSteps = this.resolveMaxSteps(opts, meta);
 
     const newMessages = toMessages(input);
     const history = await this.loadHistory(opts.conversationId);
-    const messages = [...history, ...newMessages];
+    const ctx: GuardrailContext = {
+      agent: agentName,
+      messages: [...history, ...newMessages],
+      options: opts,
+    };
 
-    if (schema) {
-      const result = await generateObject({
-        model,
-        system,
-        messages,
-        schema,
-        abortSignal: opts.abortSignal,
-        temperature: opts.temperature,
+    this.events?.emit(AI_EVENTS.agentRunStart, {
+      agent: agentName,
+      input,
+      options: opts,
+    });
+
+    try {
+      await this.guardrails?.runBeforeRun(ctx);
+
+      const result = schema
+        ? await this.runObject<T>(model, system, ctx.messages, schema, opts, newMessages)
+        : await this.runText<T>(model, system, ctx.messages, meta, maxSteps, opts, newMessages);
+
+      await this.guardrails?.runAfterRun(ctx, result);
+      this.events?.emit(AI_EVENTS.agentRunFinish, {
+        agent: agentName,
+        result,
       });
-      await this.persist(opts.conversationId, newMessages, [
-        { role: 'assistant', content: JSON.stringify(result.object) },
-      ]);
-      return {
-        text: '',
-        object: result.object as T,
-        usage: result.usage,
-        finishReason: result.finishReason,
-        messages: [],
-      };
+      return result;
+    } catch (error) {
+      this.events?.emit(AI_EVENTS.agentRunError, { agent: agentName, error });
+      throw error;
     }
+  }
 
+  private async runObject<T>(
+    model: ReturnType<ProviderRegistry['getLanguageModel']>,
+    system: string | undefined,
+    messages: AiMessage[],
+    schema: NonNullable<AgentRunOptions['schema']>,
+    opts: AgentRunOptions,
+    newMessages: AiMessage[],
+  ): Promise<AgentResult<T>> {
+    const result = await generateObject({
+      model,
+      system,
+      messages,
+      schema,
+      abortSignal: opts.abortSignal,
+      temperature: opts.temperature,
+      experimental_telemetry: this.telemetry(),
+    });
+    await this.persist(opts.conversationId, newMessages, [
+      { role: 'assistant', content: JSON.stringify(result.object) },
+    ]);
+    return {
+      text: '',
+      object: result.object as T,
+      usage: result.usage,
+      finishReason: result.finishReason,
+      messages: [],
+    };
+  }
+
+  private async runText<T>(
+    model: ReturnType<ProviderRegistry['getLanguageModel']>,
+    system: string | undefined,
+    messages: AiMessage[],
+    meta: AgentOptions,
+    maxSteps: number,
+    opts: AgentRunOptions,
+    newMessages: AiMessage[],
+  ): Promise<AgentResult<T>> {
     const result = await generateText({
       model,
       system,
@@ -80,6 +135,7 @@ export class AgentExecutorService {
       stopWhen: stepCountIs(maxSteps),
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
+      experimental_telemetry: this.telemetry(),
     });
     await this.persist(opts.conversationId, newMessages, result.response.messages);
     return {
@@ -99,12 +155,18 @@ export class AgentExecutorService {
    */
   stream(agent: object, input: AiInput, opts: AgentRunOptions = {}) {
     const meta = this.readMetadata(agent);
+    const agentName = agent.constructor?.name ?? 'AiAgent';
     const model = this.providers.getLanguageModel(opts.model ?? meta.model);
-    const system = opts.system ?? meta.system;
+    const system = this.resolveSystem(opts, meta);
     const schema = opts.schema ?? meta.output;
     const maxSteps = this.resolveMaxSteps(opts, meta);
 
     const newMessages = toMessages(input);
+    this.events?.emit(AI_EVENTS.agentRunStart, {
+      agent: agentName,
+      input,
+      options: opts,
+    });
 
     if (schema) {
       return streamObject({
@@ -114,12 +176,14 @@ export class AgentExecutorService {
         schema,
         abortSignal: opts.abortSignal,
         temperature: opts.temperature,
+        experimental_telemetry: this.telemetry(),
         onFinish: async ({ object }) => {
           if (object !== undefined) {
             await this.persist(opts.conversationId, newMessages, [
               { role: 'assistant', content: JSON.stringify(object) },
             ]);
           }
+          this.events?.emit(AI_EVENTS.streamFinish, { agent: agentName });
         },
       });
     }
@@ -132,10 +196,39 @@ export class AgentExecutorService {
       stopWhen: stepCountIs(maxSteps),
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
+      experimental_telemetry: this.telemetry(),
       onFinish: async ({ response }) => {
         await this.persist(opts.conversationId, newMessages, response.messages);
+        this.events?.emit(AI_EVENTS.streamFinish, { agent: agentName });
       },
     });
+  }
+
+  private resolveSystem(
+    opts: AgentRunOptions,
+    meta: AgentOptions,
+  ): string | undefined {
+    if (opts.systemPrompt) {
+      if (!this.prompts) {
+        throw new Error(
+          'systemPrompt requires the PromptRegistry (AiModule must be imported).',
+        );
+      }
+      return this.prompts.render(
+        opts.systemPrompt.name,
+        opts.systemPrompt.vars,
+        { version: opts.systemPrompt.version },
+      );
+    }
+    return opts.system ?? meta.system;
+  }
+
+  private telemetry() {
+    const t = this.options.telemetry;
+    if (!t?.isEnabled) {
+      return undefined;
+    }
+    return { isEnabled: true, functionId: t.functionId };
   }
 
   private readMetadata(agent: object): AgentOptions {

@@ -1,7 +1,15 @@
-import { Injectable, type OnModuleInit, type Type } from '@nestjs/common';
+import {
+  Injectable,
+  Optional,
+  type OnModuleInit,
+  type Type,
+} from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { tool, type Tool as AiTool, type ToolSet } from 'ai';
 import { TOOL_METADATA } from '../ai.constants.js';
+import { AiEventEmitter } from '../observability/ai-event-emitter.js';
+import { AI_EVENTS } from '../observability/ai-events.js';
+import { GuardrailRegistry } from '../observability/guardrail.registry.js';
 import type { ToolMetadata } from './tool.metadata.js';
 
 /** A discovered tool together with the class that declared it. */
@@ -27,6 +35,8 @@ export class ToolRegistry implements OnModuleInit {
     private readonly discovery: DiscoveryService,
     private readonly scanner: MetadataScanner,
     private readonly reflector: Reflector,
+    @Optional() private readonly events?: AiEventEmitter,
+    @Optional() private readonly guardrails?: GuardrailRegistry,
   ) {}
 
   onModuleInit(): void {
@@ -68,8 +78,13 @@ export class ToolRegistry implements OnModuleInit {
     const built = tool({
       description: metadata.description,
       inputSchema: metadata.schema,
-      execute: async (args: unknown, opts: unknown) =>
-        instance[methodName](args, opts),
+      execute: async (args: unknown, opts: unknown) => {
+        await this.guardrails?.runOnToolCall(name, args);
+        this.events?.emit(AI_EVENTS.toolCall, { tool: name, args });
+        const result = await instance[methodName](args, opts);
+        this.events?.emit(AI_EVENTS.toolResult, { tool: name, args, result });
+        return result;
+      },
     });
     this.tools.set(name, {
       name,

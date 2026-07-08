@@ -45,8 +45,30 @@ export interface AiModuleOptions {
   defaultModel?: string;
   /** Default embedding model, e.g. `"openai:text-embedding-3-small"`. */
   defaultEmbeddingModel?: string;
+  /** Default image model, e.g. `"openai:dall-e-3"`. */
+  defaultImageModel?: string;
+  /** Default speech (text-to-speech) model, e.g. `"openai:tts-1"`. */
+  defaultSpeechModel?: string;
+  /** Default transcription model, e.g. `"openai:whisper-1"`. */
+  defaultTranscriptionModel?: string;
   /** Default maximum tool-calling steps for agent runs. */
   defaultMaxSteps?: number;
+  /**
+   * OpenTelemetry settings forwarded to the AI SDK's `experimental_telemetry`.
+   * Requires an OTel setup in the host app to actually export spans.
+   */
+  telemetry?: { isEnabled?: boolean; functionId?: string };
+  /** Prompt templates to register at startup. */
+  prompts?: import('../prompts/prompt.types.js').PromptDefinition[];
+  /** Guardrail provider classes to register (also discovered via `@Guardrail`). */
+  guardrails?: import('@nestjs/common').Type<any>[];
+  /** Custom vector store provider (defaults to `InMemoryVectorStore`). */
+  vectorStore?: import('@nestjs/common').Type<any> | {
+    useClass?: import('@nestjs/common').Type<any>;
+    useFactory?: (...args: any[]) => any;
+    useValue?: any;
+    inject?: any[];
+  };
   /**
    * Optional conversation store provider. When omitted an in-memory store is
    * registered. Use `useClass`/`useFactory`/`useValue` to plug a custom store.
@@ -79,4 +101,8 @@ export interface AiModuleAsyncOptions
 export interface AiFeatureOptions {
   agents?: Type<any>[];
   tools?: Type<any>[];
+  /** Guardrail provider classes to register for discovery. */
+  guardrails?: Type<any>[];
+  /** Prompt templates to register at startup. */
+  prompts?: import('../prompts/prompt.types.js').PromptDefinition[];
 }

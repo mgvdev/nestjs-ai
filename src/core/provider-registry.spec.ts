@@ -58,6 +58,34 @@ describe('ProviderRegistry', () => {
     ).toThrowError(/embedding|textEmbeddingModel/i);
   });
 
+  it('resolves image, speech and transcription models', async () => {
+    const registry = await makeRegistry({
+      providers: { openai: { apiKey: 'test' } },
+    });
+    expect(registry.getImageModel('openai:dall-e-3').modelId).toBe('dall-e-3');
+    expect(registry.getSpeechModel('openai:tts-1').modelId).toBe('tts-1');
+    expect(registry.getTranscriptionModel('openai:whisper-1').modelId).toBe(
+      'whisper-1',
+    );
+  });
+
+  it('uses default multimodal models when no id is passed', async () => {
+    const registry = await makeRegistry({
+      providers: { openai: { apiKey: 'test' } },
+      defaultImageModel: 'openai:dall-e-3',
+    });
+    expect(registry.getImageModel().modelId).toBe('dall-e-3');
+  });
+
+  it('throws for a provider without image support', async () => {
+    const registry = await makeRegistry({
+      providers: { anthropic: { apiKey: 'test' } },
+    });
+    expect(() => registry.getImageModel('anthropic:x')).toThrowError(
+      /image/i,
+    );
+  });
+
   it('throws for an unconfigured provider', async () => {
     const registry = await makeRegistry({
       providers: { openai: { apiKey: 'test' } },

@@ -3,12 +3,14 @@
  */
 export const AI_MODULE_OPTIONS = Symbol('AI_MODULE_OPTIONS');
 export const CONVERSATION_STORE = Symbol('CONVERSATION_STORE');
+export const VECTOR_STORE = Symbol('VECTOR_STORE');
 
 /**
  * Reflect metadata keys for the `@Tool` and `@Agent` decorators.
  */
 export const TOOL_METADATA = Symbol('nestjs-ai:tool');
 export const AGENT_METADATA = Symbol('nestjs-ai:agent');
+export const GUARDRAIL_METADATA = Symbol('nestjs-ai:guardrail');
 
 /**
  * Default number of tool-calling steps allowed before an agent run stops.
