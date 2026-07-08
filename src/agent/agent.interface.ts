@@ -16,6 +16,11 @@ export interface AgentRunOptions {
   /** Resolve the system prompt from the PromptRegistry (overrides `system`). */
   systemPrompt?: PromptRef;
   /**
+   * Recall relevant snippets from semantic memory and prepend them as context.
+   * Requires `conversationId` and a `SemanticMemory` service.
+   */
+  recall?: { query?: string; topK?: number };
+  /**
    * Conversation id. When set, prior messages are loaded from the
    * `ConversationStore` before the call and the new exchange is persisted after.
    */

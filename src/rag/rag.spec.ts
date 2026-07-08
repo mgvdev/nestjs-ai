@@ -73,6 +73,24 @@ describe('RagService', () => {
     expect(results[0].content).toContain('cat');
   });
 
+  it('applies a reranker when requested', async () => {
+    const { rag } = makeRag();
+    await rag.ingest([
+      { id: 'cat', content: 'The cat sat on the mat.' },
+      { id: 'cat2', content: 'A cat naps in the sun.' },
+    ]);
+    // Reranker that reverses the store order, proving it was applied.
+    const reranker = {
+      rerank: async (_q: string, results: any[], topN: number) =>
+        [...results].reverse().slice(0, topN),
+    };
+    const normal = await rag.retrieve('cat', { topK: 2 });
+    const reranked = await rag.retrieve('cat', { topK: 2, rerank: reranker });
+    expect(reranked.map((r) => r.id)).toEqual(
+      [...normal.map((r) => r.id)].reverse(),
+    );
+  });
+
   it('exposes a retrieval tool that formats hits', async () => {
     const { rag } = makeRag();
     await rag.ingest([{ id: 'cat', content: 'Cats purr when happy.' }]);

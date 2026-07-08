@@ -26,6 +26,14 @@ framework-native interface over multiple providers (OpenAI, Anthropic, Google).
 - ✋ **Human-in-the-loop** — tool approval gates.
 - ⏱️ **Background jobs** — run agents asynchronously on BullMQ.
 - 🌐 **HTTP/SSE** — stream agents straight to the response.
+- 💰 **Cost & budgets** — token/cost tracking with per-conversation budget guards.
+- 🚦 **Rate limiting** — throttle runs per conversation/user.
+- 🧠 **Semantic memory** — long-term recall via embeddings.
+- 🛡️ **Content safety** — PII redaction and moderation guardrails.
+- 🥇 **Reranking** — heuristic or model reranking for RAG.
+- 🧪 **Testing & evals** — mock helpers and an LLM-as-judge harness.
+- 🔌 **More vector stores** — Qdrant, Pinecone (plus pgvector).
+- 📡 **WebSocket** — realtime agent streaming over socket.io.
 
 ## Installation
 
@@ -493,6 +501,115 @@ CREATE TABLE ai_documents (
   embedding vector(1536) NOT NULL, metadata jsonb
 );
 CREATE INDEX ON ai_documents USING hnsw (embedding vector_cosine_ops);
+```
+
+## Cost tracking & budgets
+
+Token usage and USD cost are tracked per conversation. Set a budget to block
+runaway spend:
+
+```ts
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  maxCostPerConversation: 0.5,   // blocks the next run once $0.50 is reached
+  pricing: { 'gpt-4o': { input: 2.5, output: 10 } }, // override defaults
+});
+
+// inspect anytime
+const { cost, inputTokens } = this.usage.totals(conversationId);
+// or listen: @OnEvent('ai.usage') onUsage(record) { ... }
+```
+
+## Rate limiting
+
+```ts
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  rateLimiter: {
+    useValue: new InMemoryRateLimiter({ capacity: 10, refillTokens: 10, intervalMs: 60_000 }),
+  },
+});
+```
+
+Runs are throttled per `conversationId`. Implement `RateLimiter` for a
+distributed (Redis) limiter.
+
+## Semantic memory
+
+Store and recall context across turns via embeddings:
+
+```ts
+await this.memory.remember(conversationId, 'The user prefers dark mode.');
+// recall automatically on the next run:
+await agent.run('what are my settings?', { conversationId, recall: { topK: 3 } });
+```
+
+## Content safety
+
+Register guardrails to redact PII and moderate content:
+
+```ts
+AiModule.forFeature({
+  guardrails: [
+    PiiRedactionGuardrail,
+    createModerationGuardrail({ blocked: ['secret-project'] }),
+  ],
+});
+```
+
+## Reranking
+
+Improve RAG precision by reranking candidates:
+
+```ts
+// heuristic (no dependency), or configure a model reranker:
+const hits = await this.rag.retrieve('query', { topK: 4, rerank: true });
+```
+
+## More vector stores
+
+`QdrantVectorStore` and `PineconeVectorStore` join `PgVectorStore` and
+`InMemoryVectorStore`. Pass your own client:
+
+```ts
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  vectorStore: { useFactory: () => new QdrantVectorStore(qdrant, { collection: 'docs' }) },
+});
+```
+
+## Evals (LLM-as-judge)
+
+```ts
+const report = await this.evals.run(myAgent, [
+  { input: 'capital of France?', expected: 'Paris' },
+], { judge: createLlmJudge(this.ai, { scale: 5 }) });
+// report.averageScore, report.passRate, report.results
+```
+
+## Testing utilities
+
+From `@mgvdev/nestjs-ai/testing` (needs `msw`):
+
+```ts
+import { createTestingAiModule, createMockModel } from '@mgvdev/nestjs-ai/testing';
+
+const app = await createTestingAiModule({
+  model: createMockModel('mocked answer'),
+  providers: [MyAgent],
+});
+expect((await app.get(MyAgent).run('hi')).text).toBe('mocked answer');
+```
+
+## Realtime (WebSocket)
+
+From `@mgvdev/nestjs-ai/websocket` (needs `@nestjs/websockets`, `socket.io`):
+
+```ts
+@Module({ providers: [AgentGateway] })
+export class RealtimeModule {}
+// client: socket.emit('agent:run', { agent: 'ChatAgent', input });
+//         socket.on('agent:chunk', ({ delta }) => …); socket.on('agent:done', ({ text }) => …);
 ```
 
 ## Raw generation (no agent class)

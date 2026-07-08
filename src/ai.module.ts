@@ -11,6 +11,8 @@ import {
   AI_MODULE_OPTIONS,
   APPROVAL_GATE,
   CONVERSATION_STORE,
+  RATE_LIMITER,
+  RERANKER,
   VECTOR_STORE,
 } from './ai.constants.js';
 import type {
@@ -38,6 +40,12 @@ import {
 import { GuardrailRegistry } from './observability/guardrail.registry.js';
 import { AgentRegistry } from './agent/orchestration/agent-registry.js';
 import { McpService } from './mcp/mcp.service.js';
+import { UsageTracker } from './usage/usage-tracker.service.js';
+import { BudgetGuard } from './usage/budget.guardrail.js';
+import { RateLimitGuardrail } from './ratelimit/rate-limit.guardrail.js';
+import { SemanticMemory } from './memory/semantic/semantic-memory.service.js';
+import { HeuristicReranker } from './rag/rerank/heuristic-reranker.js';
+import { EvalRunner } from './evals/eval-runner.service.js';
 
 const AI_INITIALIZER = Symbol('AI_INITIALIZER');
 
@@ -111,7 +119,10 @@ export class AiModule {
         AiModule.eventEmitterProvider(),
         ...AiModule.tokenProvider(AI_CACHE, options.cache),
         ...AiModule.tokenProvider(APPROVAL_GATE, options.approvalGate),
+        ...AiModule.tokenProvider(RATE_LIMITER, options.rateLimiter),
         ...AiModule.guardrailClasses(options.guardrails),
+        ...(options.maxCostPerConversation != null ? [BudgetGuard] : []),
+        ...(options.rateLimiter ? [RateLimitGuardrail] : []),
         ...AiModule.coreProviders(),
         AiModule.initializerProvider(),
       ],
@@ -135,6 +146,10 @@ export class AiModule {
       AiEventEmitter,
       GuardrailRegistry,
       McpService,
+      UsageTracker,
+      SemanticMemory,
+      EvalRunner,
+      { provide: RERANKER, useFactory: () => new HeuristicReranker() },
     ];
   }
 
@@ -174,6 +189,10 @@ export class AiModule {
       AiEventEmitter,
       GuardrailRegistry,
       McpService,
+      UsageTracker,
+      SemanticMemory,
+      EvalRunner,
+      RERANKER,
       CONVERSATION_STORE,
       VECTOR_STORE,
       AI_MODULE_OPTIONS,

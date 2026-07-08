@@ -1,7 +1,12 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/typeorm.ts'],
+  entry: [
+    'src/index.ts',
+    'src/typeorm.ts',
+    'src/websocket.ts',
+    'src/testing.ts',
+  ],
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
@@ -20,7 +25,14 @@ export default defineConfig({
     'bullmq',
     'pg',
     '@modelcontextprotocol/sdk',
+    '@nestjs/websockets',
+    '@nestjs/platform-socket.io',
+    'socket.io',
+    '@nestjs/testing',
+    '@qdrant/js-client-rest',
+    '@pinecone-database/pinecone',
     'ai',
+    'ai/test',
     'zod',
     'reflect-metadata',
     '@ai-sdk/openai',

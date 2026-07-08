@@ -4,6 +4,7 @@ import {
   type EmbeddingModel,
   type ImageModel,
   type LanguageModel,
+  type RerankingModel,
   type SpeechModel,
   type TranscriptionModel,
 } from 'ai';
@@ -29,10 +30,12 @@ interface AiSdkProvider {
   imageModel?(modelId: string): ImageModel;
   speechModel?(modelId: string): SpeechModel;
   transcriptionModel?(modelId: string): TranscriptionModel;
+  rerankingModel?(modelId: string): RerankingModel;
   // Shorthands exposed by some concrete providers (e.g. openai).
   image?(modelId: string): ImageModel;
   speech?(modelId: string): SpeechModel;
   transcription?(modelId: string): TranscriptionModel;
+  reranking?(modelId: string): RerankingModel;
 }
 
 /**
@@ -142,6 +145,19 @@ export class ProviderRegistry implements OnModuleInit {
       this.options.defaultImageModel,
       ['imageModel', 'image'],
       'image generation',
+    );
+  }
+
+  /** Resolves a reranking model (default `rerankingModel` option). */
+  getRerankingModel(model?: string | RerankingModel): RerankingModel {
+    if (model && typeof model !== 'string') {
+      return model;
+    }
+    return this.resolveMultimodal<RerankingModel>(
+      model,
+      this.options.rerankingModel,
+      ['rerankingModel', 'reranking'],
+      'reranking',
     );
   }
 

@@ -7,6 +7,8 @@ export const VECTOR_STORE = Symbol('VECTOR_STORE');
 export const AI_CACHE = Symbol('AI_CACHE');
 export const APPROVAL_GATE = Symbol('APPROVAL_GATE');
 export const AGENT_QUEUE = Symbol('AGENT_QUEUE');
+export const RATE_LIMITER = Symbol('RATE_LIMITER');
+export const RERANKER = Symbol('RERANKER');
 
 /**
  * Reflect metadata keys for the `@Tool` and `@Agent` decorators.

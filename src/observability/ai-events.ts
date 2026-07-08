@@ -8,6 +8,7 @@ export const AI_EVENTS = {
   toolCall: 'ai.tool.call',
   toolResult: 'ai.tool.result',
   streamFinish: 'ai.stream.finish',
+  usage: 'ai.usage',
 } as const;
 
 export interface AgentRunStartPayload {

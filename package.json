@@ -29,6 +29,16 @@
       "types": "./dist/typeorm.d.ts",
       "import": "./dist/typeorm.js",
       "require": "./dist/typeorm.cjs"
+    },
+    "./websocket": {
+      "types": "./dist/websocket.d.ts",
+      "import": "./dist/websocket.js",
+      "require": "./dist/websocket.cjs"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.cjs"
     }
   },
   "files": [
@@ -82,6 +92,24 @@
     },
     "@modelcontextprotocol/sdk": {
       "optional": true
+    },
+    "@nestjs/websockets": {
+      "optional": true
+    },
+    "@nestjs/platform-socket.io": {
+      "optional": true
+    },
+    "socket.io": {
+      "optional": true
+    },
+    "@qdrant/js-client-rest": {
+      "optional": true
+    },
+    "@pinecone-database/pinecone": {
+      "optional": true
+    },
+    "msw": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -91,8 +119,10 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/event-emitter": "^3.1.0",
+    "@nestjs/platform-socket.io": "^11.1.28",
     "@nestjs/testing": "^11.0.0",
     "@nestjs/typeorm": "^11.0.3",
+    "@nestjs/websockets": "^11.1.28",
     "@swc/core": "^1.15.43",
     "@types/node": "^22.0.0",
     "ai": "^7.0.17",
@@ -100,6 +130,7 @@
     "msw": "^2.15.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3",
     "tsup": "^8.3.0",
     "typeorm": "^1.0.0",
     "typescript": "^5.6.0",

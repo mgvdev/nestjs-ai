@@ -1,11 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { VECTOR_STORE } from '../ai.constants.js';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { RERANKER, VECTOR_STORE } from '../ai.constants.js';
 import { EmbeddingsService } from '../embeddings/embeddings.service.js';
 import type {
   VectorDocument,
   VectorQueryResult,
   VectorStore,
 } from './vector-store.interface.js';
+import type { Reranker } from './rerank/reranker.interface.js';
 
 /** An item to ingest into the vector store. */
 export interface IngestItem {
@@ -28,6 +29,14 @@ export interface RetrieveOptions {
   topK?: number;
   model?: string;
   filter?: Record<string, unknown>;
+  /**
+   * Rerank the results before truncating to `topK`. `true` uses the configured
+   * default reranker; pass a `Reranker` to override. When reranking, more
+   * candidates (`fetchK`) are fetched first.
+   */
+  rerank?: boolean | Reranker;
+  /** Candidates to fetch before reranking (default `topK * 4`). */
+  fetchK?: number;
 }
 
 /**
@@ -39,6 +48,7 @@ export class RagService {
   constructor(
     private readonly embeddings: EmbeddingsService,
     @Inject(VECTOR_STORE) private readonly store: VectorStore,
+    @Optional() @Inject(RERANKER) private readonly defaultReranker?: Reranker,
   ) {}
 
   /** Chunks, embeds, and upserts items into the vector store. */
@@ -83,10 +93,23 @@ export class RagService {
     const { embedding } = await this.embeddings.embed(query, {
       model: options.model,
     });
-    return this.store.query(embedding, {
-      topK: options.topK,
+    const topK = options.topK ?? 4;
+
+    const reranker =
+      options.rerank === true
+        ? this.defaultReranker
+        : options.rerank || undefined;
+
+    const fetchK = reranker ? (options.fetchK ?? topK * 4) : topK;
+    const results = await this.store.query(embedding, {
+      topK: fetchK,
       filter: options.filter,
     });
+
+    if (reranker) {
+      return reranker.rerank(query, results, topK);
+    }
+    return results.slice(0, topK);
   }
 }
 

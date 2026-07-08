@@ -84,6 +84,19 @@ export interface AiModuleOptions {
   };
   /** TTL (ms) for cached generations/embeddings. Default: no expiry. */
   cacheTtlMs?: number;
+  /** Per-model USD pricing (per 1M tokens) for cost tracking. */
+  pricing?: import('../usage/pricing.js').PricingTable;
+  /** Max accumulated USD cost per conversation before runs are blocked. */
+  maxCostPerConversation?: number;
+  /** Rate limiter for throttling agent runs. */
+  rateLimiter?: import('@nestjs/common').Type<any> | {
+    useClass?: import('@nestjs/common').Type<any>;
+    useFactory?: (...args: any[]) => any;
+    useValue?: any;
+    inject?: any[];
+  };
+  /** Reranking model id (e.g. `"cohere:rerank-v3.5"`) for `ModelReranker`. */
+  rerankingModel?: string;
   /** Approval gate for tools flagged `requiresApproval` (defaults to auto-approve). */
   approvalGate?: import('@nestjs/common').Type<any> | {
     useClass?: import('@nestjs/common').Type<any>;

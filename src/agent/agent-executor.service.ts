@@ -23,6 +23,8 @@ import { AI_EVENTS } from '../observability/ai-events.js';
 import { GuardrailRegistry } from '../observability/guardrail.registry.js';
 import type { GuardrailContext } from '../observability/guardrail.interface.js';
 import { PromptRegistry } from '../prompts/prompt-registry.service.js';
+import { UsageTracker } from '../usage/usage-tracker.service.js';
+import { SemanticMemory } from '../memory/semantic/semantic-memory.service.js';
 import type { AgentOptions } from './agent.metadata.js';
 import type { AgentResult, AgentRunOptions } from './agent.interface.js';
 
@@ -41,6 +43,8 @@ export class AgentExecutorService {
     @Optional() private readonly events?: AiEventEmitter,
     @Optional() private readonly guardrails?: GuardrailRegistry,
     @Optional() private readonly prompts?: PromptRegistry,
+    @Optional() private readonly usageTracker?: UsageTracker,
+    @Optional() private readonly semanticMemory?: SemanticMemory,
   ) {}
 
   /** Runs an agent to completion and returns its result. */
@@ -52,7 +56,7 @@ export class AgentExecutorService {
     const meta = this.readMetadata(agent);
     const agentName = agent.constructor?.name ?? 'AiAgent';
     const model = this.providers.getLanguageModel(opts.model ?? meta.model);
-    const system = this.resolveSystem(opts, meta);
+    const system = await this.resolveSystemWithRecall(opts, meta, input);
     const schema = opts.schema ?? meta.output;
     const maxSteps = this.resolveMaxSteps(opts, meta);
 
@@ -76,6 +80,13 @@ export class AgentExecutorService {
       const result = schema
         ? await this.runObject<T>(model, system, ctx.messages, schema, opts, newMessages)
         : await this.runText<T>(model, system, ctx.messages, meta, maxSteps, opts, newMessages);
+
+      this.usageTracker?.record({
+        model: (model as { modelId?: string }).modelId ?? 'unknown',
+        usage: result.usage,
+        conversationId: opts.conversationId,
+        agent: agentName,
+      });
 
       await this.guardrails?.runAfterRun(ctx, result);
       this.events?.emit(AI_EVENTS.agentRunFinish, {
@@ -209,6 +220,33 @@ export class AgentExecutorService {
         this.events?.emit(AI_EVENTS.streamFinish, { agent: agentName });
       },
     });
+  }
+
+  /** Resolves the system prompt and prepends recalled memory when requested. */
+  private async resolveSystemWithRecall(
+    opts: AgentRunOptions,
+    meta: AgentOptions,
+    input: AiInput,
+  ): Promise<string | undefined> {
+    let system = this.resolveSystem(opts, meta);
+    if (opts.recall && opts.conversationId && this.semanticMemory) {
+      const query =
+        opts.recall.query ?? (typeof input === 'string' ? input : '');
+      if (query) {
+        const snippets = await this.semanticMemory.recall(
+          opts.conversationId,
+          query,
+          { topK: opts.recall.topK },
+        );
+        if (snippets.length > 0) {
+          const context = snippets.map((s) => s.content).join('\n');
+          system = [system, `Relevant context from memory:\n${context}`]
+            .filter(Boolean)
+            .join('\n\n');
+        }
+      }
+    }
+    return system;
   }
 
   private resolveSystem(

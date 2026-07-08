@@ -9,6 +9,8 @@ export {
   AI_CACHE,
   APPROVAL_GATE,
   AGENT_QUEUE,
+  RATE_LIMITER,
+  RERANKER,
   DEFAULT_MAX_STEPS,
 } from './ai.constants.js';
 
@@ -181,3 +183,94 @@ export {
   type PgPoolLike,
   type PgVectorStoreOptions,
 } from './rag/adapters/pgvector/pgvector-store.js';
+
+// Cost & usage
+export {
+  DEFAULT_PRICING,
+  costOf,
+  bareModelId,
+  type ModelPricing,
+  type PricingTable,
+} from './usage/pricing.js';
+export {
+  UsageTracker,
+  type UsageTotals,
+  type UsageRecord,
+} from './usage/usage-tracker.service.js';
+export { BudgetGuard, BudgetExceededError } from './usage/budget.guardrail.js';
+
+// Rate limiting
+export {
+  type RateLimiter,
+  RateLimitedError,
+} from './ratelimit/rate-limiter.interface.js';
+export {
+  InMemoryRateLimiter,
+  type InMemoryRateLimiterOptions,
+} from './ratelimit/in-memory-rate-limiter.js';
+export { RateLimitGuardrail } from './ratelimit/rate-limit.guardrail.js';
+
+// Content safety
+export {
+  PiiRedactionGuardrail,
+  createPiiRedactionGuardrail,
+  redactPii,
+  redactMessages,
+  DEFAULT_PII_PATTERNS,
+  type PiiRedactionOptions,
+} from './safety/pii-redaction.guardrail.js';
+export {
+  createModerationGuardrail,
+  ContentBlockedError,
+  type ModerationOptions,
+} from './safety/moderation.guardrail.js';
+
+// Semantic memory
+export {
+  SemanticMemory,
+  type RecallOptions,
+} from './memory/semantic/semantic-memory.service.js';
+
+// Reranking
+export type { Reranker } from './rag/rerank/reranker.interface.js';
+export {
+  HeuristicReranker,
+  type HeuristicRerankerOptions,
+} from './rag/rerank/heuristic-reranker.js';
+export { ModelReranker } from './rag/rerank/model-reranker.js';
+
+// Vector adapters (pass your own client)
+export {
+  QdrantVectorStore,
+  type QdrantClientLike,
+  type QdrantVectorStoreOptions,
+} from './rag/adapters/qdrant/qdrant-vector-store.js';
+export {
+  PineconeVectorStore,
+  type PineconeIndexLike,
+} from './rag/adapters/pinecone/pinecone-vector-store.js';
+
+// Evals
+export {
+  EvalRunner,
+  createLlmJudge,
+  defaultJudge,
+  type RunnableAgent,
+  type JudgeAi,
+  type RunEvalOptions,
+} from './evals/eval-runner.service.js';
+export type {
+  EvalCase,
+  EvalScore,
+  EvalResult,
+  EvalReport,
+  Judge,
+} from './evals/eval.types.js';
+
+// WebSocket streaming helper (the gateway itself is at /websocket)
+export {
+  streamAgentToSocket,
+  type SocketLike,
+  type TextStreamLike,
+  type StreamToSocketOptions,
+} from './websocket/stream-to-socket.js';
