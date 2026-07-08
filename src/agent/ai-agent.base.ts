@@ -30,7 +30,10 @@ export abstract class AiAgent {
   }
 
   /** Streams the agent's response (returns the raw Vercel stream result). */
-  stream(input: AiInput, opts?: AgentRunOptions) {
+  stream(
+    input: AiInput,
+    opts?: AgentRunOptions,
+  ): ReturnType<AgentExecutorService['stream']> {
     return this.executor.stream(this, input, opts);
   }
 }

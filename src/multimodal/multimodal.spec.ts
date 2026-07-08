@@ -1,7 +1,7 @@
 import {
-  MockImageModelV2,
-  MockSpeechModelV2,
-  MockTranscriptionModelV2,
+  MockImageModelV3,
+  MockSpeechModelV3,
+  MockTranscriptionModelV3,
 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 import type { ProviderRegistry } from '../core/provider-registry.js';
@@ -17,7 +17,7 @@ function registryWith(overrides: Partial<ProviderRegistry>): ProviderRegistry {
 
 describe('ImageService', () => {
   it('generates an image', async () => {
-    const model = new MockImageModelV2({
+    const model = new MockImageModelV3({
       doGenerate: async () => ({
         images: ['aGVsbG8='],
         warnings: [],
@@ -35,7 +35,7 @@ describe('ImageService', () => {
 
 describe('SpeechService', () => {
   it('synthesizes audio', async () => {
-    const model = new MockSpeechModelV2({
+    const model = new MockSpeechModelV3({
       doGenerate: async () => ({
         audio: new Uint8Array([1, 2, 3]),
         warnings: [],
@@ -53,7 +53,7 @@ describe('SpeechService', () => {
 
 describe('TranscriptionService', () => {
   it('transcribes audio', async () => {
-    const model = new MockTranscriptionModelV2({
+    const model = new MockTranscriptionModelV3({
       doGenerate: async () => ({
         text: 'hello world',
         segments: [],

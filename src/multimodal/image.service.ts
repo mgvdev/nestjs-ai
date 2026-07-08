@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { experimental_generateImage as generateImage } from 'ai';
+import { generateImage } from 'ai';
 import { ProviderRegistry } from '../core/provider-registry.js';
 
 export interface GenerateImageOptions {

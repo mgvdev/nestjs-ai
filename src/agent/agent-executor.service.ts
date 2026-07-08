@@ -153,7 +153,11 @@ export class AgentExecutorService {
    * controllers can pipe it to an HTTP response or iterate `textStream`.
    * Conversation persistence happens on stream finish.
    */
-  stream(agent: object, input: AiInput, opts: AgentRunOptions = {}) {
+  stream(
+    agent: object,
+    input: AiInput,
+    opts: AgentRunOptions = {},
+  ): ReturnType<typeof streamText> | ReturnType<typeof streamObject> {
     const meta = this.readMetadata(agent);
     const agentName = agent.constructor?.name ?? 'AiAgent';
     const model = this.providers.getLanguageModel(opts.model ?? meta.model);

@@ -1,10 +1,10 @@
-import { MockEmbeddingModelV2 } from 'ai/test';
+import { MockEmbeddingModelV3 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 import type { ProviderRegistry } from '../core/provider-registry.js';
 import { EmbeddingsService } from './embeddings.service.js';
 
 function makeService(): EmbeddingsService {
-  const model = new MockEmbeddingModelV2<string>({
+  const model = new MockEmbeddingModelV3<string>({
     modelId: 'text-embedding-3-small',
     doEmbed: async ({ values }) => ({
       embeddings: values.map((v) => [v.charCodeAt(0)]),

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { convertArrayToReadableStream, MockLanguageModelV2 } from 'ai/test';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
+import { convertArrayToReadableStream, MockLanguageModelV3 } from 'ai/test';
 import { z } from 'zod';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AiModule } from '../ai.module.js';
@@ -14,16 +14,16 @@ import { AiAgent } from './ai-agent.base.js';
 
 const USAGE = { inputTokens: 1, outputTokens: 1, totalTokens: 2 };
 
-type GenResult = Awaited<ReturnType<LanguageModelV2['doGenerate']>>;
+type GenResult = Awaited<ReturnType<LanguageModelV3['doGenerate']>>;
 
 /**
  * Builds a mock model that returns each result in order across successive
  * `doGenerate` calls. (The array form of `doGenerate` does not dispatch
  * sequentially, so we drive it with an explicit counter.)
  */
-function sequencedModel(results: GenResult[]): MockLanguageModelV2 {
+function sequencedModel(results: GenResult[]): MockLanguageModelV3 {
   let call = 0;
-  return new MockLanguageModelV2({
+  return new MockLanguageModelV3({
     doGenerate: async () => results[Math.min(call++, results.length - 1)],
   });
 }
@@ -66,7 +66,7 @@ class WeatherAgent extends AiAgent {}
 class SentimentAgent extends AiAgent {}
 
 /** Mutable holder so each test installs its own mock model. */
-let currentModel: LanguageModelV2;
+let currentModel: LanguageModelV3;
 
 async function bootstrap() {
   const moduleRef = await Test.createTestingModule({
@@ -121,7 +121,7 @@ describe('AgentExecutorService (integration)', () => {
   });
 
   it('produces structured output when the agent declares a schema', async () => {
-    currentModel = new MockLanguageModelV2({
+    currentModel = new MockLanguageModelV3({
       doGenerate: {
         content: [{ type: 'text', text: JSON.stringify({ sentiment: 'positive' }) }],
         finishReason: 'stop',
@@ -161,13 +161,13 @@ describe('AgentExecutorService (integration)', () => {
       .map((m) => m.content);
     expect(userTexts).toEqual(['Hello', 'Are you there?']);
     // second model call must have seen the prior turns
-    const secondCall = (currentModel as MockLanguageModelV2).doGenerateCalls[1];
+    const secondCall = (currentModel as MockLanguageModelV3).doGenerateCalls[1];
     expect(secondCall.prompt.length).toBeGreaterThan(1);
     await moduleRef.close();
   });
 
   it('streams text chunks', async () => {
-    currentModel = new MockLanguageModelV2({
+    currentModel = new MockLanguageModelV3({
       doStream: {
         stream: convertArrayToReadableStream([
           { type: 'stream-start', warnings: [] },

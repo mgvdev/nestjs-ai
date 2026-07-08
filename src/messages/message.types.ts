@@ -1,10 +1,10 @@
-import type { CoreMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 
 /**
  * A single conversation message, re-exported from the AI SDK so consumers of
  * this library never need to import `ai` types directly.
  */
-export type AiMessage = CoreMessage;
+export type AiMessage = ModelMessage;
 
 /**
  * The input accepted by agent `.run()` / `.stream()` and the raw facade: either

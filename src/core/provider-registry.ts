@@ -19,7 +19,7 @@ type ProviderName = 'openai' | 'anthropic' | 'google';
  */
 interface AiSdkProvider {
   languageModel(modelId: string): LanguageModel;
-  textEmbeddingModel?(modelId: string): EmbeddingModel<string>;
+  textEmbeddingModel?(modelId: string): EmbeddingModel;
   // ProviderV2 standard multimodal methods.
   imageModel?(modelId: string): ImageModel;
   speechModel?(modelId: string): SpeechModel;
@@ -74,8 +74,8 @@ export class ProviderRegistry implements OnModuleInit {
    * `defaultEmbeddingModel`).
    */
   getEmbeddingModel(
-    model?: string | EmbeddingModel<string>,
-  ): EmbeddingModel<string> {
+    model?: string | EmbeddingModel,
+  ): EmbeddingModel {
     if (model && typeof model !== 'string') {
       return model;
     }

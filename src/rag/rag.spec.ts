@@ -1,4 +1,4 @@
-import { MockEmbeddingModelV2 } from 'ai/test';
+import { MockEmbeddingModelV3 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 import type { ProviderRegistry } from '../core/provider-registry.js';
 import { EmbeddingsService } from '../embeddings/embeddings.service.js';
@@ -13,7 +13,7 @@ function vec(text: string): number[] {
 }
 
 function makeRag(): { rag: RagService; store: InMemoryVectorStore } {
-  const model = new MockEmbeddingModelV2<string>({
+  const model = new MockEmbeddingModelV3<string>({
     doEmbed: async ({ values }) => ({
       embeddings: values.map(vec),
       usage: { tokens: values.length },

@@ -31,19 +31,27 @@ export class AiService {
     private readonly toolRegistry: ToolRegistry,
   ) {}
 
-  generateText(params: NestAiParams<typeof generateText>) {
+  generateText(
+    params: NestAiParams<typeof generateText>,
+  ): ReturnType<typeof generateText> {
     return generateText(this.resolve(params) as Parameters<typeof generateText>[0]);
   }
 
-  streamText(params: NestAiParams<typeof streamText>) {
+  streamText(
+    params: NestAiParams<typeof streamText>,
+  ): ReturnType<typeof streamText> {
     return streamText(this.resolve(params) as Parameters<typeof streamText>[0]);
   }
 
-  generateObject(params: NestAiParams<typeof generateObject>) {
+  generateObject(
+    params: NestAiParams<typeof generateObject>,
+  ): ReturnType<typeof generateObject> {
     return generateObject(this.resolve(params) as Parameters<typeof generateObject>[0]);
   }
 
-  streamObject(params: NestAiParams<typeof streamObject>) {
+  streamObject(
+    params: NestAiParams<typeof streamObject>,
+  ): ReturnType<typeof streamObject> {
     return streamObject(this.resolve(params) as Parameters<typeof streamObject>[0]);
   }
 

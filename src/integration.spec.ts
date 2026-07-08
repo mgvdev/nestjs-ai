@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { MockEmbeddingModelV2, MockLanguageModelV2 } from 'ai/test';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
+import { MockEmbeddingModelV3, MockLanguageModelV3 } from 'ai/test';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
 import { AiModule } from './ai.module.js';
@@ -57,7 +57,7 @@ class RunCounter implements GuardrailContract {
 describe('phase 2 integration', () => {
   it('runs an agent that retrieves from RAG, firing guardrails and events', async () => {
     let step = 0;
-    const langModel = new MockLanguageModelV2({
+    const langModel = new MockLanguageModelV3({
       doGenerate: async () =>
         step++ === 0
           ? {
@@ -79,9 +79,9 @@ describe('phase 2 integration', () => {
               usage: USAGE,
               warnings: [],
             },
-    }) as LanguageModelV2;
+    }) as LanguageModelV3;
 
-    const embedModel = new MockEmbeddingModelV2<string>({
+    const embedModel = new MockEmbeddingModelV3<string>({
       doEmbed: async ({ values }) => ({
         embeddings: values.map(vec),
         usage: { tokens: values.length },
