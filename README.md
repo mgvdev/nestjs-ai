@@ -7,6 +7,11 @@ with first-class dependency injection.
 Inspired by [Laravel AI](https://github.com/laravel/ai): a consistent,
 framework-native interface over multiple providers (OpenAI, Anthropic, Google).
 
+> **Docs:** full guides live in [`documentation/`](./documentation/README.md).
+> A bundled Claude Code skill lives at [`skill/nestjs-ai/SKILL.md`](./skill/nestjs-ai/SKILL.md) —
+> copy it to `.claude/skills/nestjs-ai/` (or symlink from `node_modules/@mgvdev/nestjs-ai/skill/nestjs-ai`)
+> to let Claude build with this library.
+
 - 🧩 **`@Agent` / `@Tool` decorators** — agents and tools are ordinary NestJS
   providers, so they can inject repositories, services, config, anything.
 - 🔧 **Automatic tool discovery** — tools are found across your app and wired to
