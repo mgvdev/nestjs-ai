@@ -51,6 +51,7 @@
     "@nestjs/typeorm": "^10.0.0 || ^11.0.0",
     "ai": "^7.0.0",
     "reflect-metadata": "^0.1.13 || ^0.2.0",
+    "rxjs": "^7.0.0",
     "typeorm": "^0.3.0 || ^1.0.0",
     "zod": "^3.23.0 || ^4.0.0"
   },
@@ -71,6 +72,15 @@
       "optional": true
     },
     "typeorm": {
+      "optional": true
+    },
+    "bullmq": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "@modelcontextprotocol/sdk": {
       "optional": true
     }
   },

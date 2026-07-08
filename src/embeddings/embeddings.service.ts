@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { embed, embedMany } from 'ai';
+import { AI_CACHE } from '../ai.constants.js';
 import { ProviderRegistry } from '../core/provider-registry.js';
+import type { AiCache } from '../cache/ai-cache.interface.js';
 
 export interface EmbedOptions {
   /** Embedding model id, e.g. `"openai:text-embedding-3-small"`. */
@@ -15,16 +17,34 @@ export interface EmbedOptions {
  */
 @Injectable()
 export class EmbeddingsService {
-  constructor(private readonly providers: ProviderRegistry) {}
+  constructor(
+    private readonly providers: ProviderRegistry,
+    @Optional() @Inject(AI_CACHE) private readonly cache?: AiCache,
+  ) {}
 
-  /** Embeds a single value. */
+  /** Embeds a single value (cached when a cache is configured). */
   async embed(value: string, options: EmbedOptions = {}) {
-    return embed({
-      model: this.providers.getEmbeddingModel(options.model),
+    const model = this.providers.getEmbeddingModel(options.model);
+    const key = `emb:${(model as { modelId?: string }).modelId ?? ''}:${value}`;
+
+    if (this.cache) {
+      const hit = await this.cache.get(key);
+      if (hit !== undefined) {
+        return hit as Awaited<ReturnType<typeof embed>>;
+      }
+    }
+
+    const result = await embed({
+      model,
       value,
       abortSignal: options.abortSignal,
       maxRetries: options.maxRetries,
     });
+
+    if (this.cache) {
+      await this.cache.set(key, result);
+    }
+    return result;
   }
 
   /** Embeds many values (the SDK batches automatically). */

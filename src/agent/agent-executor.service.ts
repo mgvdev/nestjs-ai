@@ -104,6 +104,7 @@ export class AgentExecutorService {
       schema,
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
+      maxRetries: opts.maxRetries ?? this.options.maxRetries,
       experimental_telemetry: this.telemetry(),
     });
     await this.persist(opts.conversationId, newMessages, [
@@ -135,6 +136,7 @@ export class AgentExecutorService {
       stopWhen: stepCountIs(maxSteps),
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
+      maxRetries: opts.maxRetries ?? this.options.maxRetries,
       experimental_telemetry: this.telemetry(),
     });
     await this.persist(opts.conversationId, newMessages, result.response.messages);
@@ -200,6 +202,7 @@ export class AgentExecutorService {
       stopWhen: stepCountIs(maxSteps),
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
+      maxRetries: opts.maxRetries ?? this.options.maxRetries,
       experimental_telemetry: this.telemetry(),
       onFinish: async ({ response }) => {
         await this.persist(opts.conversationId, newMessages, response.messages);

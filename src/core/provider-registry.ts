@@ -1,12 +1,17 @@
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
-import type {
-  EmbeddingModel,
-  ImageModel,
-  LanguageModel,
-  SpeechModel,
-  TranscriptionModel,
+import { Inject, Injectable, Optional, type OnModuleInit } from '@nestjs/common';
+import {
+  wrapLanguageModel,
+  type EmbeddingModel,
+  type ImageModel,
+  type LanguageModel,
+  type SpeechModel,
+  type TranscriptionModel,
 } from 'ai';
-import { AI_MODULE_OPTIONS } from '../ai.constants.js';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
+import { AI_CACHE, AI_MODULE_OPTIONS } from '../ai.constants.js';
+import { createFallbackModel } from '../resilience/fallback-model.js';
+import { createCacheMiddleware } from '../cache/cache-middleware.js';
+import type { AiCache } from '../cache/ai-cache.interface.js';
 import type {
   AiModuleOptions,
   ProviderConfig,
@@ -43,7 +48,21 @@ export class ProviderRegistry implements OnModuleInit {
 
   constructor(
     @Inject(AI_MODULE_OPTIONS) private readonly options: AiModuleOptions,
+    @Optional() @Inject(AI_CACHE) private readonly cache?: AiCache,
   ) {}
+
+  /** Wraps a model with the cache middleware when a cache is configured. */
+  private applyCache(model: LanguageModel): LanguageModel {
+    if (!this.cache || typeof model === 'string') {
+      return model;
+    }
+    return wrapLanguageModel({
+      model: model as LanguageModelV3,
+      middleware: createCacheMiddleware(this.cache, {
+        ttlMs: this.options.cacheTtlMs,
+      }),
+    });
+  }
 
   async onModuleInit(): Promise<void> {
     const configured = this.options.providers ?? {};
@@ -60,11 +79,32 @@ export class ProviderRegistry implements OnModuleInit {
    * as-is), a `"provider:model"` string, a bare `"model"` string (using the
    * default provider), or `undefined` (using `defaultModel`).
    */
-  getLanguageModel(model?: string | LanguageModel): LanguageModel {
+  getLanguageModel(
+    model?: string | LanguageModel | Array<string | LanguageModel>,
+  ): LanguageModel {
+    // Array => fallback chain (try each in order).
+    const chain = model ?? this.options.defaultModel;
+    if (Array.isArray(chain)) {
+      if (chain.length === 0) {
+        throw new Error('An empty model array was provided.');
+      }
+      if (chain.length === 1) {
+        return this.getLanguageModel(chain[0]);
+      }
+      const resolved = chain.map((m) =>
+        this.resolveSingle(m),
+      ) as LanguageModelV3[];
+      return this.applyCache(createFallbackModel(resolved));
+    }
+    return this.applyCache(this.resolveSingle(chain));
+  }
+
+  /** Resolves a single (non-array) model reference without cache wrapping. */
+  private resolveSingle(model?: string | LanguageModel): LanguageModel {
     if (model && typeof model !== 'string') {
       return model;
     }
-    const { provider, modelId } = this.resolve(model, this.options.defaultModel);
+    const { provider, modelId } = this.resolve(model, undefined);
     return provider.languageModel(modelId);
   }
 

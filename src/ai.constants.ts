@@ -4,6 +4,9 @@
 export const AI_MODULE_OPTIONS = Symbol('AI_MODULE_OPTIONS');
 export const CONVERSATION_STORE = Symbol('CONVERSATION_STORE');
 export const VECTOR_STORE = Symbol('VECTOR_STORE');
+export const AI_CACHE = Symbol('AI_CACHE');
+export const APPROVAL_GATE = Symbol('APPROVAL_GATE');
+export const AGENT_QUEUE = Symbol('AGENT_QUEUE');
 
 /**
  * Reflect metadata keys for the `@Tool` and `@Agent` decorators.

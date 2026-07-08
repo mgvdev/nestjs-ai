@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { DiscoveryModule, ModuleRef } from '@nestjs/core';
 import {
+  AI_CACHE,
   AI_MODULE_OPTIONS,
+  APPROVAL_GATE,
   CONVERSATION_STORE,
   VECTOR_STORE,
 } from './ai.constants.js';
@@ -34,6 +36,8 @@ import {
   EVENT_EMITTER,
 } from './observability/ai-event-emitter.js';
 import { GuardrailRegistry } from './observability/guardrail.registry.js';
+import { AgentRegistry } from './agent/orchestration/agent-registry.js';
+import { McpService } from './mcp/mcp.service.js';
 
 const AI_INITIALIZER = Symbol('AI_INITIALIZER');
 
@@ -105,6 +109,8 @@ export class AiModule {
         AiModule.storeProvider(options.conversationStore),
         AiModule.vectorStoreProvider(options.vectorStore),
         AiModule.eventEmitterProvider(),
+        ...AiModule.tokenProvider(AI_CACHE, options.cache),
+        ...AiModule.tokenProvider(APPROVAL_GATE, options.approvalGate),
         ...AiModule.guardrailClasses(options.guardrails),
         ...AiModule.coreProviders(),
         AiModule.initializerProvider(),
@@ -118,6 +124,7 @@ export class AiModule {
       ProviderRegistry,
       ToolRegistry,
       AgentExecutorService,
+      AgentRegistry,
       AiService,
       EmbeddingsService,
       ImageService,
@@ -127,7 +134,28 @@ export class AiModule {
       PromptRegistry,
       AiEventEmitter,
       GuardrailRegistry,
+      McpService,
     ];
+  }
+
+  /**
+   * Registers an optional provider (class / factory / value / useClass shape)
+   * under `token`, or nothing when not configured.
+   */
+  private static tokenProvider(
+    token: symbol,
+    config:
+      | Type<any>
+      | { useClass?: Type<any>; useFactory?: (...a: any[]) => any; useValue?: any; inject?: any[] }
+      | undefined,
+  ): Provider[] {
+    if (!config) {
+      return [];
+    }
+    if (typeof config === 'function') {
+      return [{ provide: token, useClass: config }];
+    }
+    return [{ provide: token, ...config } as Provider];
   }
 
   private static exportedTokens(): any[] {
@@ -135,6 +163,7 @@ export class AiModule {
       ProviderRegistry,
       ToolRegistry,
       AgentExecutorService,
+      AgentRegistry,
       AiService,
       EmbeddingsService,
       ImageService,
@@ -144,6 +173,7 @@ export class AiModule {
       PromptRegistry,
       AiEventEmitter,
       GuardrailRegistry,
+      McpService,
       CONVERSATION_STORE,
       VECTOR_STORE,
       AI_MODULE_OPTIONS,

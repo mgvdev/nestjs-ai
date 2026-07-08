@@ -20,6 +20,12 @@ framework-native interface over multiple providers (OpenAI, Anthropic, Google).
 - 📝 **Prompt registry** — named, versioned templates with interpolation.
 - 🛡️ **Events & guardrails** — lifecycle events (`@OnEvent`) and blocking hooks.
 - 💾 **Durable memory** — TypeORM and Prisma conversation-store adapters.
+- 🤝 **Multi-agent** — agents as tools (supervisor / handoff).
+- 🔌 **MCP** — adapt Model Context Protocol servers into agent tools.
+- ♻️ **Resilience** — model fallback chains, retries, response/embedding caching.
+- ✋ **Human-in-the-loop** — tool approval gates.
+- ⏱️ **Background jobs** — run agents asynchronously on BullMQ.
+- 🌐 **HTTP/SSE** — stream agents straight to the response.
 
 ## Installation
 
@@ -355,6 +361,138 @@ model AiMessage {
   createdAt      DateTime @default(now())
   @@index([conversationId])
 }
+```
+
+## Multi-agent orchestration
+
+Reference an `@Agent` class in another agent's `tools` to delegate to it
+(supervisor / handoff). The sub-agent's output is returned to the caller.
+
+```ts
+@Agent({ model: 'openai:gpt-4o', system: 'Research facts.' })
+export class ResearchAgent extends AiAgent {}
+
+@Agent({
+  model: 'openai:gpt-4o',
+  system: 'Coordinate specialists to answer the user.',
+  tools: [ResearchAgent, WriterAgent],
+})
+export class SupervisorAgent extends AiAgent {}
+```
+
+`AgentRegistry` indexes all agents by class name (used by orchestration and
+background jobs); `createAgentTool(agent, opts)` wraps any agent as a tool
+manually.
+
+## MCP (Model Context Protocol)
+
+Adapt tools from an MCP server into an agent tool set. Bring your own client
+from `@modelcontextprotocol/sdk` (a `listTools`/`callTool`/`close` object):
+
+```ts
+const set = await this.mcp.connect('filesystem', mcpClient);
+// tools are now available; reference them via AiService or merge into an agent
+await this.ai.generateText({ model: 'openai:gpt-4o', tools: set, prompt });
+```
+
+## Resilience: fallback models & retries
+
+Pass a model **array** to configure a fallback chain (each tried in order), and
+`maxRetries` for SDK-native retries:
+
+```ts
+@Agent({ model: ['openai:gpt-4o', 'anthropic:claude-sonnet-5'] })
+export class ResilientAgent extends AiAgent {}
+
+await agent.run(prompt, { maxRetries: 3 });
+```
+
+## Caching
+
+Configure a cache to memoize model responses (via middleware) and single
+embeddings. Implement `AiCache` (e.g. Redis) or use the in-memory default:
+
+```ts
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  cache: InMemoryAiCache,
+  cacheTtlMs: 60_000,
+});
+```
+
+## Human-in-the-loop (tool approval)
+
+Flag a tool with `requiresApproval` and register an `ApprovalGate`. The gate is
+consulted before the tool executes; returning `false` blocks it.
+
+```ts
+@Tool({ description: 'Delete a record', schema: z.object({ id: z.string() }), requiresApproval: true })
+deleteRecord({ id }: { id: string }) { /* … */ }
+
+@Injectable()
+class QueueApprovalGate implements ApprovalGate {
+  async requestApproval({ tool, args }: ApprovalContext) {
+    return askAHuman(tool, args); // resolve true/false
+  }
+}
+
+AiModule.forRoot({ providers: { openai: { apiKey } }, approvalGate: QueueApprovalGate });
+```
+
+## Background jobs (BullMQ)
+
+Run agents asynchronously. Import `AgentJobsModule` (needs the optional peer
+`bullmq` + Redis); a worker resolves agents from `AgentRegistry`.
+
+```ts
+@Module({ imports: [AgentJobsModule.forRoot({ connection: { host: 'localhost', port: 6379 } })] })
+export class JobsModule {}
+
+// enqueue
+await this.queue.enqueue({ agent: 'SupportAgent', input: 'summarize ticket 42' });
+```
+
+## HTTP / SSE streaming
+
+Pipe an agent stream straight to the HTTP response:
+
+```ts
+@Post('chat')
+chat(@Body('prompt') prompt: string, @Res() res: Response) {
+  pipeAgentStream(this.agent.stream(prompt), res, { protocol: 'ui' });
+}
+```
+
+Or use the interceptor and just return the stream result:
+
+```ts
+@UseInterceptors(new AgentStreamInterceptor({ protocol: 'ui' }))
+@Post('chat')
+chat(@Body('prompt') prompt: string) {
+  return this.agent.stream(prompt);
+}
+```
+
+## pgvector
+
+A Postgres/pgvector `VectorStore`. Pass your own `pg` Pool:
+
+```ts
+import { PgVectorStore } from '@mgvdev/nestjs-ai';
+
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  vectorStore: { useFactory: () => new PgVectorStore(pool, { table: 'ai_documents' }) },
+});
+```
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE ai_documents (
+  id text PRIMARY KEY, content text NOT NULL,
+  embedding vector(1536) NOT NULL, metadata jsonb
+);
+CREATE INDEX ON ai_documents USING hnsw (embedding vector_cosine_ops);
 ```
 
 ## Raw generation (no agent class)

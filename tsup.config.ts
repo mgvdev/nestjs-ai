@@ -13,9 +13,13 @@ export default defineConfig({
   external: [
     '@nestjs/common',
     '@nestjs/core',
+    'rxjs',
     '@nestjs/event-emitter',
     '@nestjs/typeorm',
     'typeorm',
+    'bullmq',
+    'pg',
+    '@modelcontextprotocol/sdk',
     'ai',
     'zod',
     'reflect-metadata',

@@ -40,9 +40,12 @@ export interface AiModuleOptions {
   providers?: ProvidersConfig;
   /**
    * Model used when a call does not specify one, e.g. `"openai:gpt-4o"` or a
-   * bare `"gpt-4o"` when a single provider is configured.
+   * bare `"gpt-4o"` when a single provider is configured. An array configures a
+   * fallback chain (each tried in order).
    */
-  defaultModel?: string;
+  defaultModel?: string | string[];
+  /** Default retry count forwarded to generate/stream calls. */
+  maxRetries?: number;
   /** Default embedding model, e.g. `"openai:text-embedding-3-small"`. */
   defaultEmbeddingModel?: string;
   /** Default image model, e.g. `"openai:dall-e-3"`. */
@@ -64,6 +67,25 @@ export interface AiModuleOptions {
   guardrails?: import('@nestjs/common').Type<any>[];
   /** Custom vector store provider (defaults to `InMemoryVectorStore`). */
   vectorStore?: import('@nestjs/common').Type<any> | {
+    useClass?: import('@nestjs/common').Type<any>;
+    useFactory?: (...args: any[]) => any;
+    useValue?: any;
+    inject?: any[];
+  };
+  /**
+   * Response/embedding cache. When set, resolved language models are wrapped
+   * with a caching middleware and embeddings are cached.
+   */
+  cache?: import('@nestjs/common').Type<any> | {
+    useClass?: import('@nestjs/common').Type<any>;
+    useFactory?: (...args: any[]) => any;
+    useValue?: any;
+    inject?: any[];
+  };
+  /** TTL (ms) for cached generations/embeddings. Default: no expiry. */
+  cacheTtlMs?: number;
+  /** Approval gate for tools flagged `requiresApproval` (defaults to auto-approve). */
+  approvalGate?: import('@nestjs/common').Type<any> | {
     useClass?: import('@nestjs/common').Type<any>;
     useFactory?: (...args: any[]) => any;
     useValue?: any;

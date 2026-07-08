@@ -7,8 +7,10 @@ import type { PromptRef } from '../prompts/prompt.types.js';
  * Per-call overrides for an agent `.run()` / `.stream()`.
  */
 export interface AgentRunOptions {
-  /** Override the agent's model for this call. */
-  model?: string;
+  /** Override the agent's model for this call. Array = fallback chain. */
+  model?: string | string[];
+  /** Retry count forwarded to the underlying generate/stream call. */
+  maxRetries?: number;
   /** Override the agent's system prompt for this call. */
   system?: string;
   /** Resolve the system prompt from the PromptRegistry (overrides `system`). */

@@ -4,12 +4,19 @@ import {
   type OnModuleInit,
   type Type,
 } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { tool, type Tool as AiTool, type ToolSet } from 'ai';
-import { TOOL_METADATA } from '../ai.constants.js';
+import { AGENT_METADATA, APPROVAL_GATE, TOOL_METADATA } from '../ai.constants.js';
 import { AiEventEmitter } from '../observability/ai-event-emitter.js';
 import { AI_EVENTS } from '../observability/ai-events.js';
 import { GuardrailRegistry } from '../observability/guardrail.registry.js';
+import { AgentRegistry } from '../agent/orchestration/agent-registry.js';
+import { createAgentTool } from '../agent/orchestration/agent-tool.js';
+import {
+  type ApprovalGate,
+  ToolApprovalDeniedError,
+} from '../approval/approval-gate.interface.js';
 import type { ToolMetadata } from './tool.metadata.js';
 
 /** A discovered tool together with the class that declared it. */
@@ -37,6 +44,8 @@ export class ToolRegistry implements OnModuleInit {
     private readonly reflector: Reflector,
     @Optional() private readonly events?: AiEventEmitter,
     @Optional() private readonly guardrails?: GuardrailRegistry,
+    @Optional() @Inject(APPROVAL_GATE) private readonly approvalGate?: ApprovalGate,
+    @Optional() private readonly agentRegistry?: AgentRegistry,
   ) {}
 
   onModuleInit(): void {
@@ -79,6 +88,15 @@ export class ToolRegistry implements OnModuleInit {
       description: metadata.description,
       inputSchema: metadata.schema,
       execute: async (args: unknown, opts: unknown) => {
+        if (metadata.requiresApproval && this.approvalGate) {
+          const approved = await this.approvalGate.requestApproval({
+            tool: name,
+            args,
+          });
+          if (!approved) {
+            throw new ToolApprovalDeniedError(name);
+          }
+        }
         await this.guardrails?.runOnToolCall(name, args);
         this.events?.emit(AI_EVENTS.toolCall, { tool: name, args });
         const result = await instance[methodName](args, opts);
@@ -135,12 +153,32 @@ export class ToolRegistry implements OnModuleInit {
       return [entry];
     }
     const entries = this.getForClass(ref);
-    if (entries.length === 0) {
-      throw new Error(
-        `Class "${ref.name}" declares no @Tool methods, or was not registered ` +
-          `as a provider so it could be discovered.`,
-      );
+    if (entries.length > 0) {
+      return entries;
     }
-    return entries;
+    // Not a @Tool provider — maybe an @Agent class used as a sub-agent tool.
+    const agentEntry = this.resolveAgentRef(ref);
+    if (agentEntry) {
+      return [agentEntry];
+    }
+    throw new Error(
+      `Class "${ref.name}" declares no @Tool methods and is not a registered ` +
+        `@Agent, or was not registered as a provider so it could be discovered.`,
+    );
+  }
+
+  private resolveAgentRef(ref: Type<any>): ToolEntry | undefined {
+    if (!this.agentRegistry || !Reflect.getMetadata(AGENT_METADATA, ref)) {
+      return undefined;
+    }
+    const instance = this.agentRegistry.getByClass(ref);
+    if (!instance) {
+      return undefined;
+    }
+    return {
+      name: ref.name,
+      tool: createAgentTool(instance, { name: ref.name }),
+      target: ref,
+    };
   }
 }

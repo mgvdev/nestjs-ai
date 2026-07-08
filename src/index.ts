@@ -6,6 +6,9 @@ export {
   AI_MODULE_OPTIONS,
   CONVERSATION_STORE,
   VECTOR_STORE,
+  AI_CACHE,
+  APPROVAL_GATE,
+  AGENT_QUEUE,
   DEFAULT_MAX_STEPS,
 } from './ai.constants.js';
 
@@ -116,3 +119,65 @@ export {
   PrismaConversationStore,
   type PrismaConversationDelegate,
 } from './memory/adapters/prisma/prisma-conversation.store.js';
+
+// Resilience (fallback + retry)
+export {
+  createFallbackModel,
+  type FallbackOptions,
+} from './resilience/fallback-model.js';
+
+// Caching
+export type { AiCache } from './cache/ai-cache.interface.js';
+export { InMemoryAiCache } from './cache/in-memory-ai-cache.js';
+export {
+  createCacheMiddleware,
+  cacheKey,
+  type CacheMiddlewareOptions,
+} from './cache/cache-middleware.js';
+
+// Approval (human-in-the-loop)
+export {
+  type ApprovalGate,
+  type ApprovalContext,
+  ToolApprovalDeniedError,
+} from './approval/approval-gate.interface.js';
+export { AutoApproveGate, DenyApproveGate } from './approval/approval-gates.js';
+
+// Multi-agent orchestration
+export {
+  AgentRegistry,
+  type AgentEntry,
+} from './agent/orchestration/agent-registry.js';
+export {
+  createAgentTool,
+  type AgentToolOptions,
+} from './agent/orchestration/agent-tool.js';
+
+// HTTP / SSE helpers
+export {
+  pipeAgentStream,
+  type PipeAgentStreamOptions,
+  type PipeableStreamResult,
+} from './http/stream-response.js';
+export { AgentStreamInterceptor } from './http/agent-stream.interceptor.js';
+
+// MCP (bring your own @modelcontextprotocol/sdk client)
+export {
+  McpService,
+  type McpClientLike,
+  type McpToolInfo,
+  type McpCallResult,
+} from './mcp/mcp.service.js';
+
+// Background jobs (requires optional peer `bullmq`)
+export { AgentJobsModule, type AgentJobsOptions } from './jobs/agent-jobs.module.js';
+export { AgentQueueService, AGENT_JOB_NAME } from './jobs/agent-queue.service.js';
+export { AgentJobProcessor } from './jobs/agent-job.processor.js';
+export type { AgentJobData, QueueLike } from './jobs/agent-job.types.js';
+
+// pgvector store (pass your own `pg` Pool)
+export {
+  PgVectorStore,
+  type PgPoolLike,
+  type PgVectorStoreOptions,
+} from './rag/adapters/pgvector/pgvector-store.js';

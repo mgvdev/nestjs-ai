@@ -10,6 +10,8 @@ export interface ToolOptions {
   description: string;
   /** Zod schema describing the tool's input arguments. */
   schema: ZodType<any, any, any>;
+  /** Require approval from the configured `ApprovalGate` before executing. */
+  requiresApproval?: boolean;
 }
 
 /**
