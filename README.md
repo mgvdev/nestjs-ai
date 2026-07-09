@@ -8,9 +8,10 @@ Inspired by [Laravel AI](https://github.com/laravel/ai): a consistent,
 framework-native interface over multiple providers (OpenAI, Anthropic, Google).
 
 > **Docs:** full guides live in [`documentation/`](./documentation/README.md).
-> A bundled Claude Code skill lives at [`skill/nestjs-ai/SKILL.md`](./skill/nestjs-ai/SKILL.md) —
-> copy it to `.claude/skills/nestjs-ai/` (or symlink from `node_modules/@mgvdev/nestjs-ai/skill/nestjs-ai`)
-> to let Claude build with this library.
+> A bundled skill lives at [`skill/nestjs-ai/SKILL.md`](./skill/nestjs-ai/SKILL.md). It is
+> discovered automatically by [nest-boost](https://nestjs.mgvdev.io/nest-boost) via the
+> `nestBoost.skills` field in `package.json`. For raw Claude Code, copy it to
+> `.claude/skills/nestjs-ai/` (or symlink from `node_modules/@mgvdev/nestjs-ai/skill/nestjs-ai`).
 
 - 🧩 **`@Agent` / `@Tool` decorators** — agents and tools are ordinary NestJS
   providers, so they can inject repositories, services, config, anything.

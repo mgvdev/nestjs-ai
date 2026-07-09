@@ -48,6 +48,11 @@
     "README.md",
     "LICENSE"
   ],
+  "nestBoost": {
+    "skills": [
+      "skill"
+    ]
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
