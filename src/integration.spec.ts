@@ -13,7 +13,11 @@ import { Tool } from './tools/tool.decorator.js';
 import { RagService } from './rag/rag.service.js';
 import { Guardrail } from './observability/guardrail.decorator.js';
 import type { Guardrail as GuardrailContract } from './observability/guardrail.interface.js';
+import { GuardrailRegistry } from './observability/guardrail.registry.js';
 import { AI_EVENTS } from './observability/ai-events.js';
+import { RunBudgetExceededError } from './usage/run-budget-exceeded.error.js';
+import type { OnBudgetExceeded } from './usage/on-budget-exceeded.interface.js';
+import type { BudgetDecision, BudgetExceededContext } from './usage/budget.types.js';
 
 const USAGE = { inputTokens: 1, outputTokens: 1, totalTokens: 2 };
 
@@ -53,6 +57,105 @@ class RunCounter implements GuardrailContract {
     this.after++;
   }
 }
+
+describe('run budget integration', () => {
+  it('registers RunBudgetGuardrail when budget is configured', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        EventEmitterModule.forRoot(),
+        AiModule.forRoot({
+          providers: { openai: { apiKey: 'test' } },
+          budget: { maxTotalTokensPerRun: 1 },
+        }),
+      ],
+    }).compile();
+    await moduleRef.init();
+
+    const registry = moduleRef.get(GuardrailRegistry);
+    expect(registry.count).toBe(1);
+    await moduleRef.close();
+  });
+
+  it('invokes run budget guardrail through registry', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        EventEmitterModule.forRoot(),
+        AiModule.forRoot({
+          providers: { openai: { apiKey: 'test' } },
+          budget: { maxTotalTokensPerRun: 1 },
+        }),
+      ],
+    }).compile();
+    await moduleRef.init();
+
+    const registry = moduleRef.get(GuardrailRegistry);
+    await expect(
+      registry.runAfterRun(
+        {
+          agent: 'A',
+          agentInstance: {},
+          messages: [],
+          options: {},
+        },
+        {
+          text: '',
+          usage: {
+            inputTokens: 5,
+            outputTokens: 5,
+            totalTokens: 10,
+            inputTokenDetails: {
+              noCacheTokens: undefined,
+              cacheReadTokens: undefined,
+              cacheWriteTokens: undefined,
+            },
+            outputTokenDetails: {
+              textTokens: undefined,
+              reasoningTokens: undefined,
+            },
+          },
+          messages: [],
+        },
+      ),
+    ).rejects.toThrow(RunBudgetExceededError);
+    await moduleRef.close();
+  });
+
+  it('blocks a run via beforeRunBudget agent hook', async () => {
+    const langModel = new MockLanguageModelV3({
+      doGenerate: async () => ({
+        content: [{ type: 'text', text: 'should not run' }],
+        finishReason: 'stop',
+        usage: USAGE,
+        warnings: [],
+      }),
+    }) as LanguageModelV3;
+
+    @Agent({ model: 'openai:gpt-4o' })
+    class PreCheckAgent extends AiAgent implements OnBudgetExceeded {
+      async beforeRunBudget(): Promise<BudgetDecision> {
+        return { action: 'block', reason: 'no-credits-left' };
+      }
+    }
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        EventEmitterModule.forRoot(),
+        AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } }),
+      ],
+      providers: [PreCheckAgent],
+    })
+      .overrideProvider(ProviderRegistry)
+      .useValue({
+        getLanguageModel: () => langModel,
+      } as unknown as ProviderRegistry)
+      .compile();
+    await moduleRef.init();
+
+    const agent = moduleRef.get(PreCheckAgent);
+    await expect(agent.run('hello')).rejects.toThrow('no-credits-left');
+    await moduleRef.close();
+  });
+});
 
 describe('phase 2 integration', () => {
   it('runs an agent that retrieves from RAG, firing guardrails and events', async () => {

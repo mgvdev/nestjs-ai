@@ -198,6 +198,22 @@ export {
   type UsageRecord,
 } from './usage/usage-tracker.service.js';
 export { BudgetGuard, BudgetExceededError } from './usage/budget.guardrail.js';
+export { BudgetPolicy } from './usage/budget-policy.service.js';
+export { RunBudgetGuardrail } from './usage/run-budget.guardrail.js';
+export { RunBudgetExceededError } from './usage/run-budget-exceeded.error.js';
+export type {
+  BudgetLimits,
+  BudgetExceededKind,
+  BudgetCheckContext,
+  BudgetRunContext,
+  BudgetExceededContext,
+  BudgetDecision,
+} from './usage/budget.types.js';
+export type {
+  OnBudgetExceeded,
+  BudgetExceededHandler,
+} from './usage/on-budget-exceeded.interface.js';
+export { BUDGET_EXCEEDED_HANDLER } from './usage/on-budget-exceeded.interface.js';
 
 // Rate limiting
 export {

@@ -24,6 +24,7 @@ import { GuardrailRegistry } from '../observability/guardrail.registry.js';
 import type { GuardrailContext } from '../observability/guardrail.interface.js';
 import { PromptRegistry } from '../prompts/prompt-registry.service.js';
 import { UsageTracker } from '../usage/usage-tracker.service.js';
+import { BudgetPolicy } from '../usage/budget-policy.service.js';
 import { SemanticMemory } from '../memory/semantic/semantic-memory.service.js';
 import type { AgentOptions } from './agent.metadata.js';
 import type { AgentResult, AgentRunOptions } from './agent.interface.js';
@@ -44,6 +45,7 @@ export class AgentExecutorService {
     @Optional() private readonly guardrails?: GuardrailRegistry,
     @Optional() private readonly prompts?: PromptRegistry,
     @Optional() private readonly usageTracker?: UsageTracker,
+    @Optional() private readonly budgetPolicy?: BudgetPolicy,
     @Optional() private readonly semanticMemory?: SemanticMemory,
   ) {}
 
@@ -64,6 +66,7 @@ export class AgentExecutorService {
     const history = await this.loadHistory(opts.conversationId);
     const ctx: GuardrailContext = {
       agent: agentName,
+      agentInstance: agent,
       messages: [...history, ...newMessages],
       options: opts,
     };
@@ -76,6 +79,7 @@ export class AgentExecutorService {
 
     try {
       await this.guardrails?.runBeforeRun(ctx);
+      await this.budgetPolicy?.beforeRunBudget(agent, ctx);
 
       const result = schema
         ? await this.runObject<T>(model, system, ctx.messages, schema, opts, newMessages)
@@ -88,6 +92,7 @@ export class AgentExecutorService {
         agent: agentName,
       });
 
+      await this.budgetPolicy?.afterRunBudget(agent, ctx, result);
       await this.guardrails?.runAfterRun(ctx, result);
       this.events?.emit(AI_EVENTS.agentRunFinish, {
         agent: agentName,

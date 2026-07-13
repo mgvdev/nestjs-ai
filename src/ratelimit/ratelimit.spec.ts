@@ -47,6 +47,7 @@ describe('InMemoryRateLimiter', () => {
 describe('RateLimitGuardrail', () => {
   const ctx = (conversationId?: string): GuardrailContext => ({
     agent: 'A',
+    agentInstance: {},
     messages: [],
     options: { conversationId },
   });

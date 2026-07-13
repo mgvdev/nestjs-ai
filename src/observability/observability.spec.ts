@@ -57,7 +57,7 @@ describe('GuardrailRegistry', () => {
     const recorder = moduleRef.get(RecordingGuardrail);
 
     expect(registry.count).toBe(2);
-    await registry.runBeforeRun({ agent: 'A', messages: [], options: {} });
+    await registry.runBeforeRun({ agent: 'A', agentInstance: {}, messages: [], options: {} });
     expect(recorder.seen).toEqual(['A']);
   });
 

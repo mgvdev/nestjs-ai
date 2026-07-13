@@ -12,7 +12,7 @@ import {
 } from './moderation.guardrail.js';
 
 function ctx(messages: AiMessage[]): GuardrailContext {
-  return { agent: 'A', messages, options: {} };
+  return { agent: 'A', agentInstance: {}, messages, options: {} };
 }
 
 describe('PII redaction', () => {

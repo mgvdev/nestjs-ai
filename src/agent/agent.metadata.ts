@@ -1,3 +1,4 @@
+import type { BudgetLimits } from '../usage/budget.types.js';
 import type { ZodType } from 'zod';
 import type { ToolRef } from '../tools/tool.registry.js';
 
@@ -15,4 +16,6 @@ export interface AgentOptions {
   maxSteps?: number;
   /** Default Zod schema for structured output. Enables object generation. */
   output?: ZodType<any, any, any>;
+  /** Per-run budget limits, overriding global module options. */
+  budget?: BudgetLimits;
 }

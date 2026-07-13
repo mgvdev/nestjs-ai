@@ -1,5 +1,7 @@
 import type { ModuleMetadata, Type } from '@nestjs/common';
 import type { ConversationStore } from '../memory/conversation-store.interface.js';
+import type { BudgetLimits } from '../usage/budget.types.js';
+import type { BudgetExceededHandler } from '../usage/on-budget-exceeded.interface.js';
 
 /**
  * Ways to supply a custom conversation store: a class, or a class/factory/value
@@ -88,6 +90,15 @@ export interface AiModuleOptions {
   pricing?: import('../usage/pricing.js').PricingTable;
   /** Max accumulated USD cost per conversation before runs are blocked. */
   maxCostPerConversation?: number;
+  /** Per-run USD cost and token limits. */
+  budget?: BudgetLimits;
+  /** Global handler invoked when a run exceeds its configured budget. */
+  budgetExceededHandler?: Type<BudgetExceededHandler> | {
+    useClass?: Type<BudgetExceededHandler>;
+    useFactory?: (...args: any[]) => BudgetExceededHandler | Promise<BudgetExceededHandler>;
+    useValue?: BudgetExceededHandler;
+    inject?: any[];
+  };
   /** Rate limiter for throttling agent runs. */
   rateLimiter?: import('@nestjs/common').Type<any> | {
     useClass?: import('@nestjs/common').Type<any>;

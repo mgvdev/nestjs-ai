@@ -47,6 +47,13 @@ import { SemanticMemory } from './memory/semantic/semantic-memory.service.js';
 import { HeuristicReranker } from './rag/rerank/heuristic-reranker.js';
 import { EvalRunner } from './evals/eval-runner.service.js';
 
+import { BudgetPolicy } from './usage/budget-policy.service.js';
+import { RunBudgetGuardrail } from './usage/run-budget.guardrail.js';
+import {
+  BUDGET_EXCEEDED_HANDLER,
+  type BudgetExceededHandler,
+} from './usage/on-budget-exceeded.interface.js';
+
 const AI_INITIALIZER = Symbol('AI_INITIALIZER');
 
 /**
@@ -123,6 +130,8 @@ export class AiModule {
         ...AiModule.guardrailClasses(options.guardrails),
         ...(options.maxCostPerConversation != null ? [BudgetGuard] : []),
         ...(options.rateLimiter ? [RateLimitGuardrail] : []),
+        ...(options.budget != null ? [RunBudgetGuardrail] : []),
+        ...AiModule.budgetExceededHandlerProvider(options.budgetExceededHandler),
         ...AiModule.coreProviders(),
         AiModule.initializerProvider(),
       ],
@@ -147,6 +156,7 @@ export class AiModule {
       GuardrailRegistry,
       McpService,
       UsageTracker,
+      BudgetPolicy,
       SemanticMemory,
       EvalRunner,
       { provide: RERANKER, useFactory: () => new HeuristicReranker() },
@@ -201,6 +211,18 @@ export class AiModule {
 
   private static guardrailClasses(guardrails?: Type<any>[]): Provider[] {
     return guardrails ?? [];
+  }
+
+  private static budgetExceededHandlerProvider(
+    handler: AiModuleOptions['budgetExceededHandler'],
+  ): Provider[] {
+    if (!handler) {
+      return [];
+    }
+    if (typeof handler === 'function') {
+      return [{ provide: BUDGET_EXCEEDED_HANDLER, useClass: handler }];
+    }
+    return [{ provide: BUDGET_EXCEEDED_HANDLER, ...handler } as Provider];
   }
 
   /** Seeds prompts (and future startup wiring) once dependencies exist. */

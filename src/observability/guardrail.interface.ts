@@ -4,6 +4,8 @@ import type { AiMessage } from '../messages/message.types.js';
 /** Mutable context passed to guardrails before an agent run. */
 export interface GuardrailContext {
   agent: string;
+  /** The agent instance being executed. */
+  agentInstance: object;
   /** Messages to be sent; a guardrail may mutate this array in place. */
   messages: AiMessage[];
   options: AgentRunOptions;

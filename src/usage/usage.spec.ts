@@ -57,7 +57,7 @@ describe('BudgetGuard', () => {
   const options: AiModuleOptions = { maxCostPerConversation: 5 };
 
   function ctx(conversationId?: string): GuardrailContext {
-    return { agent: 'A', messages: [], options: { conversationId } };
+    return { agent: 'A', agentInstance: {}, messages: [], options: { conversationId } };
   }
 
   it('allows runs under budget', () => {
