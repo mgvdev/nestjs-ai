@@ -55,31 +55,11 @@ export class AgentExecutorService {
     input: AiInput,
     opts: AgentRunOptions = {},
   ): Promise<AgentResult<T>> {
-    const meta = this.readMetadata(agent);
-    const agentName = agent.constructor?.name ?? 'AiAgent';
-    const model = this.providers.getLanguageModel(opts.model ?? meta.model);
-    const system = await this.resolveSystemWithRecall(opts, meta, input);
-    const schema = opts.schema ?? meta.output;
-    const maxSteps = this.resolveMaxSteps(opts, meta);
-
-    const newMessages = toMessages(input);
-    const history = await this.loadHistory(opts.conversationId);
-    const ctx: GuardrailContext = {
-      agent: agentName,
-      agentInstance: agent,
-      messages: [...history, ...newMessages],
-      options: opts,
-    };
-
-    this.events?.emit(AI_EVENTS.agentRunStart, {
-      agent: agentName,
-      input,
-      options: opts,
-    });
-
     try {
-      await this.guardrails?.runBeforeRun(ctx);
-      await this.budgetPolicy?.beforeRunBudget(agent, ctx);
+      const { agentName, ctx, meta, model, newMessages, system } =
+        await this.prepareRun(agent, input, opts);
+      const schema = opts.schema ?? meta.output;
+      const maxSteps = this.resolveMaxSteps(opts, meta);
 
       const result = schema
         ? await this.runObject<T>(model, system, ctx.messages, schema, opts, newMessages)
@@ -100,7 +80,10 @@ export class AgentExecutorService {
       });
       return result;
     } catch (error) {
-      this.events?.emit(AI_EVENTS.agentRunError, { agent: agentName, error });
+      this.events?.emit(AI_EVENTS.agentRunError, {
+        agent: agent.constructor?.name ?? 'AiAgent',
+        error,
+      });
       throw error;
     }
   }
@@ -117,6 +100,7 @@ export class AgentExecutorService {
       model,
       system,
       messages,
+      allowSystemInMessages: true,
       schema,
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
@@ -148,6 +132,7 @@ export class AgentExecutorService {
       model,
       system,
       messages,
+      allowSystemInMessages: true,
       tools: this.toolRegistry.buildToolSet(meta.tools),
       stopWhen: stepCountIs(maxSteps),
       abortSignal: opts.abortSignal,
@@ -168,63 +153,166 @@ export class AgentExecutorService {
 
   /**
    * Streams an agent's response. Returns the raw Vercel stream result so
-   * controllers can pipe it to an HTTP response or iterate `textStream`.
+   * callers can await it before piping it to an HTTP response or iterating
+   * `textStream`.
    * Conversation persistence happens on stream finish.
    */
-  stream(
+  async stream(
     agent: object,
     input: AiInput,
     opts: AgentRunOptions = {},
-  ): ReturnType<typeof streamText> | ReturnType<typeof streamObject> {
+  ): Promise<ReturnType<typeof streamText> | ReturnType<typeof streamObject>> {
+    const agentName = agent.constructor?.name ?? 'AiAgent';
+
+    try {
+      const prepared = await this.prepareRun(agent, input, opts);
+      const { ctx, meta, model, newMessages, system } = prepared;
+      const modelId = (model as { modelId?: string }).modelId ?? 'unknown';
+      const schema = opts.schema ?? meta.output;
+      const maxSteps = this.resolveMaxSteps(opts, meta);
+      let streamFailed = false;
+      let errorReported = false;
+      const reportErrorOnce = (error: unknown): void => {
+        streamFailed = true;
+        if (errorReported) {
+          return;
+        }
+        errorReported = true;
+        this.events?.emit(AI_EVENTS.agentRunError, {
+          agent: prepared.agentName,
+          error,
+        });
+      };
+
+      if (schema) {
+        return streamObject({
+          model,
+          system,
+          messages: ctx.messages,
+          allowSystemInMessages: true,
+          schema,
+          abortSignal: opts.abortSignal,
+          temperature: opts.temperature,
+          maxRetries: opts.maxRetries ?? this.options.maxRetries,
+          experimental_telemetry: this.telemetry(),
+          onError: ({ error }) => {
+            reportErrorOnce(error);
+          },
+          onFinish: async ({ object, usage, error }) => {
+            if (object === undefined) {
+              reportErrorOnce(
+                error ?? new Error('Structured stream completed without an object.'),
+              );
+              return;
+            }
+            if (streamFailed) {
+              return;
+            }
+            const result: AgentResult = {
+              text: '',
+              object,
+              usage,
+              messages: [],
+            };
+            try {
+              await this.completeRun(
+                agent,
+                ctx,
+                modelId,
+                result,
+                newMessages,
+                [{ role: 'assistant', content: JSON.stringify(object) }],
+              );
+            } catch (error) {
+              reportErrorOnce(error);
+            }
+          },
+        });
+      }
+
+      return streamText({
+        model,
+        system,
+        messages: ctx.messages,
+        allowSystemInMessages: true,
+        tools: this.toolRegistry.buildToolSet(meta.tools),
+        stopWhen: stepCountIs(maxSteps),
+        abortSignal: opts.abortSignal,
+        temperature: opts.temperature,
+        maxRetries: opts.maxRetries ?? this.options.maxRetries,
+        experimental_telemetry: this.telemetry(),
+        onError: ({ error }) => {
+          reportErrorOnce(error);
+        },
+        onFinish: async ({
+          usage,
+          finishReason,
+          steps,
+          toolCalls,
+          text,
+          responseMessages,
+        }) => {
+          if (streamFailed) {
+            return;
+          }
+          const result: AgentResult = {
+            text,
+            steps,
+            toolCalls,
+            usage,
+            finishReason,
+            messages: responseMessages,
+          };
+          try {
+            await this.completeRun(
+              agent,
+              ctx,
+              modelId,
+              result,
+              newMessages,
+              responseMessages,
+            );
+          } catch (error) {
+            reportErrorOnce(error);
+          }
+        },
+      });
+    } catch (error) {
+      this.events?.emit(AI_EVENTS.agentRunError, {
+        agent: agentName,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  private async prepareRun(
+    agent: object,
+    input: AiInput,
+    opts: AgentRunOptions,
+  ) {
     const meta = this.readMetadata(agent);
     const agentName = agent.constructor?.name ?? 'AiAgent';
     const model = this.providers.getLanguageModel(opts.model ?? meta.model);
-    const system = this.resolveSystem(opts, meta);
-    const schema = opts.schema ?? meta.output;
-    const maxSteps = this.resolveMaxSteps(opts, meta);
-
     const newMessages = toMessages(input);
+    const history = await this.loadHistory(opts.conversationId);
+    const system = await this.resolveSystemWithRecall(opts, meta, input);
+    const ctx: GuardrailContext = {
+      agent: agentName,
+      agentInstance: agent,
+      messages: [...history, ...newMessages],
+      options: opts,
+    };
+
     this.events?.emit(AI_EVENTS.agentRunStart, {
       agent: agentName,
       input,
       options: opts,
     });
+    await this.guardrails?.runBeforeRun(ctx);
+    await this.budgetPolicy?.beforeRunBudget(agent, ctx);
 
-    if (schema) {
-      return streamObject({
-        model,
-        system,
-        messages: newMessages,
-        schema,
-        abortSignal: opts.abortSignal,
-        temperature: opts.temperature,
-        experimental_telemetry: this.telemetry(),
-        onFinish: async ({ object }) => {
-          if (object !== undefined) {
-            await this.persist(opts.conversationId, newMessages, [
-              { role: 'assistant', content: JSON.stringify(object) },
-            ]);
-          }
-          this.events?.emit(AI_EVENTS.streamFinish, { agent: agentName });
-        },
-      });
-    }
-
-    return streamText({
-      model,
-      system,
-      messages: newMessages,
-      tools: this.toolRegistry.buildToolSet(meta.tools),
-      stopWhen: stepCountIs(maxSteps),
-      abortSignal: opts.abortSignal,
-      temperature: opts.temperature,
-      maxRetries: opts.maxRetries ?? this.options.maxRetries,
-      experimental_telemetry: this.telemetry(),
-      onFinish: async ({ response }) => {
-        await this.persist(opts.conversationId, newMessages, response.messages);
-        this.events?.emit(AI_EVENTS.streamFinish, { agent: agentName });
-      },
-    });
+    return { agentName, ctx, meta, model, newMessages, system };
   }
 
   /** Resolves the system prompt and prepends recalled memory when requested. */
@@ -318,5 +406,26 @@ export class AgentExecutorService {
       ...userMessages,
       ...(responseMessages as ReturnType<typeof toMessages>),
     ]);
+  }
+
+  private async completeRun(
+    agent: object,
+    ctx: GuardrailContext,
+    model: string,
+    result: AgentResult,
+    newMessages: ReturnType<typeof toMessages>,
+    responseMessages: readonly unknown[] = result.messages,
+  ): Promise<void> {
+    await this.persist(ctx.options.conversationId, newMessages, responseMessages);
+    this.usageTracker?.record({
+      model,
+      usage: result.usage,
+      conversationId: ctx.options.conversationId,
+      agent: ctx.agent,
+    });
+    await this.budgetPolicy?.afterRunBudget(agent, ctx, result);
+    await this.guardrails?.runAfterRun(ctx, result);
+    this.events?.emit(AI_EVENTS.agentRunFinish, { agent: ctx.agent, result });
+    this.events?.emit(AI_EVENTS.streamFinish, { agent: ctx.agent });
   }
 }

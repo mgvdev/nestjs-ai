@@ -185,8 +185,8 @@ const { object } = await orderAgent.run<{ product: string; quantity: number }>(t
 
 ### Streaming
 
-`.stream()` returns the raw Vercel AI SDK stream result, so you can pipe it to an
-HTTP response or iterate `textStream`:
+`.stream()` resolves to the raw Vercel AI SDK stream result, so you can pipe it
+to an HTTP response or iterate `textStream`:
 
 ```ts
 @Controller('chat')
@@ -194,8 +194,8 @@ export class ChatController {
   constructor(private readonly agent: WeatherAgent) {}
 
   @Post()
-  stream(@Body('prompt') prompt: string, @Res() res: Response) {
-    const result = this.agent.stream(prompt);
+  async stream(@Body('prompt') prompt: string, @Res() res: Response) {
+    const result = await this.agent.stream(prompt);
     result.pipeUIMessageStreamToResponse(res);
   }
 }
@@ -472,12 +472,13 @@ Pipe an agent stream straight to the HTTP response:
 
 ```ts
 @Post('chat')
-chat(@Body('prompt') prompt: string, @Res() res: Response) {
-  pipeAgentStream(this.agent.stream(prompt), res, { protocol: 'ui' });
+async chat(@Body('prompt') prompt: string, @Res() res: Response) {
+  pipeAgentStream(await this.agent.stream(prompt), res, { protocol: 'ui' });
 }
 ```
 
-Or use the interceptor and just return the stream result:
+Or use the interceptor and return the stream promise; Nest resolves it before
+`AgentStreamInterceptor` receives the result:
 
 ```ts
 @UseInterceptors(new AgentStreamInterceptor({ protocol: 'ui' }))
@@ -525,6 +526,24 @@ AiModule.forRoot({
 const { cost, inputTokens } = this.usage.totals(conversationId);
 // or listen: @OnEvent('ai.usage') onUsage(record) { ... }
 ```
+
+Cap a **single run** with `budget` (globally, or per agent to override it):
+
+```ts
+AiModule.forRoot({
+  providers: { openai: { apiKey } },
+  budget: { maxCostPerRun: 0.05, maxTotalTokensPerRun: 20_000 },
+});
+
+@Agent({ model: 'gpt-4o', budget: { maxOutputTokensPerRun: 2_000 } })
+export class SummaryAgent extends AiAgent {}
+```
+
+Exceeding a limit throws `RunBudgetExceededError`. Implement `OnBudgetExceeded`
+on the agent (`beforeRunBudget` to block up front, `afterRunBudget` to deduct
+credits, `onBudgetExceeded` to allow/block) or register a module-wide
+`budgetExceededHandler`. See
+[Reliability](./documentation/reliability.md#per-run-budgets).
 
 ## Rate limiting
 

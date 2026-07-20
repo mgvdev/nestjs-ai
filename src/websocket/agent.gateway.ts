@@ -40,6 +40,6 @@ export class AgentGateway {
       });
       return;
     }
-    await streamAgentToSocket(agent.stream(message.input), client);
+    await streamAgentToSocket(await agent.stream(message.input), client);
   }
 }

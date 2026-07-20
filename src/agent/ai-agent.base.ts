@@ -29,7 +29,7 @@ export abstract class AiAgent {
     return this.executor.run<T>(this, input, opts);
   }
 
-  /** Streams the agent's response (returns the raw Vercel stream result). */
+  /** Streams the agent's response; await the raw Vercel stream result. */
   stream(
     input: AiInput,
     opts?: AgentRunOptions,

@@ -48,6 +48,7 @@ Extend `AiAgent` and annotate with `@Agent`.
   tools: [WeatherTools],               // @Tool providers and/or @Agent sub-agents
   maxSteps: 5,                         // tool-calling loop bound
   output: z.object({ answer: z.string() }), // optional structured output
+  budget: { maxCostPerRun: 0.05 },     // per-run limits, overriding module options
 })
 export class SupportAgent extends AiAgent {}
 ```
@@ -57,7 +58,7 @@ export class SupportAgent extends AiAgent {}
 ```ts
 const { text, usage, steps, toolCalls } = await agent.run('Weather in Paris?');
 const { object } = await agent.run<Shape>(input);   // when `output`/`schema` set
-const stream = agent.stream('Hi');                  // Vercel stream result
+const stream = await agent.stream('Hi');            // Vercel stream result
 ```
 
 ### `AgentRunOptions`
@@ -78,6 +79,10 @@ await agent.run(input, {
 ```
 
 `run()` returns an `AgentResult`: `{ text, object?, steps?, toolCalls?, usage?, finishReason?, messages }`.
+
+`stream()` resolves to the raw Vercel AI SDK stream result. It applies the same
+run lifecycle as `run()`: conversation history and semantic recall, pre/post
+guardrails, run budgets, usage tracking, and lifecycle events.
 
 ## The raw facade — `AiService`
 

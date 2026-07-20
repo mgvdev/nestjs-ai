@@ -29,15 +29,20 @@ Structured-output runs use `generateObject` under the hood; the result's
 
 ## Streaming
 
-`.stream()` returns the raw Vercel AI SDK stream result. Iterate `textStream` or
-pipe it to an HTTP response.
+`.stream()` resolves to the raw Vercel AI SDK stream result. Iterate
+`textStream` or pipe it to an HTTP response.
 
 ```ts
-const result = agent.stream('Tell me a story');
+const result = await agent.stream('Tell me a story');
 for await (const delta of result.textStream) {
   process.stdout.write(delta);
 }
 ```
+
+Lifecycle-finalization failures (such as persistence, budget, or guardrail
+failures after generation) are emitted as `ai.agent.run.error`. Because the
+raw AI SDK result is preserved, consuming the stream does not reject for those
+post-stream failures.
 
 ### Stream to an HTTP response
 
@@ -45,8 +50,8 @@ for await (const delta of result.textStream) {
 import { pipeAgentStream } from '@mgvdev/nestjs-ai';
 
 @Post('chat')
-chat(@Body('prompt') prompt: string, @Res() res: Response) {
-  pipeAgentStream(agent.stream(prompt), res, { protocol: 'ui' }); // 'ui' | 'text'
+async chat(@Body('prompt') prompt: string, @Res() res: Response) {
+  pipeAgentStream(await agent.stream(prompt), res, { protocol: 'ui' }); // 'ui' | 'text'
 }
 ```
 
@@ -61,13 +66,13 @@ import { AgentStreamInterceptor } from '@mgvdev/nestjs-ai';
 @UseInterceptors(new AgentStreamInterceptor({ protocol: 'ui' }))
 @Post('chat')
 chat(@Body('prompt') prompt: string) {
-  return agent.stream(prompt);   // returned stream result is piped automatically
+  return agent.stream(prompt); // Nest resolves it; the interceptor pipes the result
 }
 ```
 
 ### Streaming structured objects
 
-When the agent has an `output` schema, `.stream()` returns a `streamObject`
+When the agent has an `output` schema, `.stream()` resolves to a `streamObject`
 result — iterate `partialObjectStream` for progressive objects.
 
 ### Realtime over WebSocket
@@ -77,5 +82,8 @@ See [Background jobs & realtime](./jobs-and-realtime.md) for `AgentGateway`
 
 ## Persistence during streaming
 
-When you pass a `conversationId`, the new user turn and the model's response are
-persisted on stream finish (`onFinish`), just like `run()`.
+Streaming has lifecycle parity with `run()`: it loads and persists conversation
+history, resolves semantic recall, runs pre/post guardrails and run budgets,
+tracks usage, and emits lifecycle events. When you pass a `conversationId`, the
+new user turn and the model's response are persisted on stream finish
+(`onFinish`), just like `run()`.

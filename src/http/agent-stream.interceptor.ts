@@ -13,8 +13,8 @@ import {
 
 /**
  * Interceptor that pipes a stream result returned by a route handler to the
- * HTTP response. The handler returns the `streamText`/agent `.stream()` result;
- * the interceptor pipes it and completes the request.
+ * HTTP response. The handler returns the agent `.stream()` promise; Nest
+ * resolves it before the interceptor receives and pipes the raw AI SDK result.
  *
  * @example
  * ```ts

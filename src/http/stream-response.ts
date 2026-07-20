@@ -21,8 +21,8 @@ export interface PipeAgentStreamOptions {
  * @example
  * ```ts
  * @Post('chat')
- * chat(@Body('prompt') prompt: string, @Res() res: Response) {
- *   pipeAgentStream(this.agent.stream(prompt), res, { protocol: 'ui' });
+ * async chat(@Body('prompt') prompt: string, @Res() res: Response) {
+ *   pipeAgentStream(await this.agent.stream(prompt), res, { protocol: 'ui' });
  * }
  * ```
  */

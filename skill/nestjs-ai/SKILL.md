@@ -82,7 +82,7 @@ Run it (inject the agent class):
 ```ts
 const { text } = await this.support.run('Weather in Paris?');
 const { object } = await this.support.run<MyType>(input);       // when `output` is set
-const stream = this.support.stream('Hi');                        // Vercel stream result
+const stream = await this.support.stream('Hi');                  // Vercel stream result
 ```
 
 `AgentRunOptions`: `{ model?, system?, systemPrompt?, conversationId?, maxSteps?, schema?, temperature?, maxRetries?, recall?, abortSignal? }`.
@@ -103,7 +103,7 @@ export class SupportModule {}
 | --- | --- |
 | Conversation history | `run(input, { conversationId })` — in-memory default; TypeORM (`/typeorm`) or Prisma store |
 | Structured output | `@Agent({ output })` or `run(input, { schema })` |
-| Streaming to HTTP | `pipeAgentStream(agent.stream(x), res, { protocol: 'ui' })` |
+| Streaming to HTTP | `async chat(...) { pipeAgentStream(await agent.stream(x), res, { protocol: 'ui' }); }` |
 | Streaming over WebSocket | `AgentGateway` from `@mgvdev/nestjs-ai/websocket` |
 | Embeddings | `EmbeddingsService.embed` / `embedMany` |
 | RAG | `RagService.ingest` / `retrieve`; stores: in-memory, `PgVectorStore`, `QdrantVectorStore`, `PineconeVectorStore` |
@@ -118,7 +118,7 @@ export class SupportModule {}
 | Fallback / retry | model array + `maxRetries` |
 | Caching | `AiModule.forRoot({ cache: InMemoryAiCache })` |
 | Background jobs | `AgentJobsModule.forRoot({ connection })` (BullMQ) |
-| Cost & budgets | `UsageTracker`; `AiModule.forRoot({ maxCostPerConversation })` |
+| Cost & budgets | `UsageTracker`; `AiModule.forRoot({ maxCostPerConversation })`; per-run `budget: { maxCostPerRun, maxTotalTokensPerRun, ... }` on `forRoot`/`@Agent`, hooks via `OnBudgetExceeded` or `budgetExceededHandler` |
 | Rate limiting | `AiModule.forRoot({ rateLimiter })` |
 | Semantic memory | `SemanticMemory.remember` / `recall`; `run(x, { recall })` |
 | Content safety | `PiiRedactionGuardrail`, `createModerationGuardrail` |
