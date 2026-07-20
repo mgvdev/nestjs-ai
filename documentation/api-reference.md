@@ -91,10 +91,15 @@ Types: `Guardrail` (as `GuardrailContract`), `GuardrailContext`, event payloads.
 | `InMemoryRateLimiter` / `RateLimitGuardrail` / `RateLimitedError` | rate limit |
 | `AutoApproveGate` / `DenyApproveGate` / `ToolApprovalDeniedError` | approval |
 | `UsageTracker` / `BudgetGuard` / `BudgetExceededError` | cost |
+| `BudgetPolicy` / `RunBudgetGuardrail` / `RunBudgetExceededError` | per-run budgets |
+| `BUDGET_EXCEEDED_HANDLER` | DI token |
 | `costOf` / `DEFAULT_PRICING` / `bareModelId` | pricing |
 
-Interfaces: `AiCache`, `RateLimiter`, `ApprovalGate`, `ApprovalContext`. Types:
-`ModelPricing`, `PricingTable`, `UsageTotals`, `UsageRecord`.
+Interfaces: `AiCache`, `RateLimiter`, `ApprovalGate`, `ApprovalContext`,
+`OnBudgetExceeded`, `BudgetExceededHandler`. Types: `ModelPricing`,
+`PricingTable`, `UsageTotals`, `UsageRecord`, `BudgetLimits`,
+`BudgetExceededKind`, `BudgetCheckContext`, `BudgetRunContext`,
+`BudgetExceededContext`, `BudgetDecision`.
 
 ## Jobs, HTTP & realtime
 

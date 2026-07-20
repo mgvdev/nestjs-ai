@@ -33,6 +33,8 @@ AiModule.forRoot({
   // cost
   pricing: { 'gpt-4o': { input: 2.5, output: 10 } },
   maxCostPerConversation: 1.0,
+  budget: { maxCostPerRun: 0.05, maxTotalTokensPerRun: 20_000 },  // per-run limits
+  budgetExceededHandler: MyBudgetHandler,          // class | { useClass | useFactory | useValue }
   // telemetry
   telemetry: { isEnabled: true, functionId: 'my-app' },
 });
