@@ -54,5 +54,7 @@ export function costOf(
   }
   const input = usage.inputTokens ?? 0;
   const output = usage.outputTokens ?? 0;
-  return (input / 1_000_000) * price.input + (output / 1_000_000) * price.output;
+  return (
+    (input / 1_000_000) * price.input + (output / 1_000_000) * price.output
+  );
 }

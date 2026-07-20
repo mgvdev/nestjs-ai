@@ -20,10 +20,7 @@ export interface Guardrail {
   /** Runs before generation. Mutate `ctx.messages` or throw to block. */
   beforeRun?(ctx: GuardrailContext): void | Promise<void>;
   /** Runs after generation with the result. */
-  afterRun?(
-    ctx: GuardrailContext,
-    result: AgentResult,
-  ): void | Promise<void>;
+  afterRun?(ctx: GuardrailContext, result: AgentResult): void | Promise<void>;
   /** Runs before a tool executes. Throw to block the tool call. */
   onToolCall?(tool: string, args: unknown): void | Promise<void>;
 }

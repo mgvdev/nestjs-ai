@@ -12,7 +12,10 @@ function agentReturning(map: Record<string, string>): RunnableAgent {
 
 describe('EvalRunner', () => {
   it('scores with the default substring judge and aggregates', async () => {
-    const agent = agentReturning({ 'capital of France?': 'It is Paris.' , '2+2?': 'five' });
+    const agent = agentReturning({
+      'capital of France?': 'It is Paris.',
+      '2+2?': 'five',
+    });
     const runner = new EvalRunner();
     const report = await runner.run(agent, [
       { input: 'capital of France?', expected: 'Paris' },

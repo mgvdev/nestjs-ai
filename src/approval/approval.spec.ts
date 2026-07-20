@@ -54,9 +54,10 @@ describe('tool approval', () => {
     });
     const registry = moduleRef.get(ToolRegistry);
 
-    const result = await registry
-      .getByName('remove')!
-      .tool.execute!({ path: '/tmp' }, {} as any);
+    const result = await registry.getByName('remove')!.tool.execute!(
+      { path: '/tmp' },
+      {} as any,
+    );
     expect(result).toBe('removed /tmp');
   });
 
@@ -68,9 +69,10 @@ describe('tool approval', () => {
     await moduleRef.init();
     const registry = moduleRef.get(ToolRegistry);
 
-    const result = await registry
-      .getByName('remove')!
-      .tool.execute!({ path: '/x' }, {} as any);
+    const result = await registry.getByName('remove')!.tool.execute!(
+      { path: '/x' },
+      {} as any,
+    );
     expect(result).toBe('removed /x');
   });
 });

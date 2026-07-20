@@ -46,9 +46,7 @@ export function createRetrievalTool(
       if (results.length === 0) {
         return 'No relevant information found.';
       }
-      return results
-        .map((r, i) => `[${i + 1}] ${r.content}`)
-        .join('\n\n');
+      return results.map((r, i) => `[${i + 1}] ${r.content}`).join('\n\n');
     },
   });
 }

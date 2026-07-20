@@ -57,7 +57,12 @@ describe('GuardrailRegistry', () => {
     const recorder = moduleRef.get(RecordingGuardrail);
 
     expect(registry.count).toBe(2);
-    await registry.runBeforeRun({ agent: 'A', agentInstance: {}, messages: [], options: {} });
+    await registry.runBeforeRun({
+      agent: 'A',
+      agentInstance: {},
+      messages: [],
+      options: {},
+    });
     expect(recorder.seen).toEqual(['A']);
   });
 
@@ -68,6 +73,8 @@ describe('GuardrailRegistry', () => {
     await expect(registry.runOnToolCall('forbidden', {})).rejects.toThrow(
       /blocked/,
     );
-    await expect(registry.runOnToolCall('allowed', {})).resolves.toBeUndefined();
+    await expect(
+      registry.runOnToolCall('allowed', {}),
+    ).resolves.toBeUndefined();
   });
 });

@@ -13,11 +13,7 @@ export interface OnBudgetExceeded {
    */
   beforeRunBudget?(
     ctx: BudgetCheckContext,
-  ):
-    | BudgetDecision
-    | Promise<BudgetDecision>
-    | void
-    | Promise<void>;
+  ): BudgetDecision | Promise<BudgetDecision> | void | Promise<void>;
 
   /**
    * Called after the run with the actual cost and usage. Use it to deduct
@@ -37,11 +33,7 @@ export interface OnBudgetExceeded {
 export interface BudgetExceededHandler {
   beforeRunBudget?(
     ctx: BudgetCheckContext,
-  ):
-    | BudgetDecision
-    | Promise<BudgetDecision>
-    | void
-    | Promise<void>;
+  ): BudgetDecision | Promise<BudgetDecision> | void | Promise<void>;
 
   afterRunBudget?(ctx: BudgetRunContext): void | Promise<void>;
 

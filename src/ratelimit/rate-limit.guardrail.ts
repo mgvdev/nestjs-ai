@@ -17,9 +17,7 @@ import {
 @Guardrail()
 @Injectable()
 export class RateLimitGuardrail implements GuardrailContract {
-  constructor(
-    @Inject(RATE_LIMITER) private readonly limiter: RateLimiter,
-  ) {}
+  constructor(@Inject(RATE_LIMITER) private readonly limiter: RateLimiter) {}
 
   async beforeRun(ctx: GuardrailContext): Promise<void> {
     const key = ctx.options.conversationId ?? 'global';

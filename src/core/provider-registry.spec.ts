@@ -3,7 +3,9 @@ import { AI_MODULE_OPTIONS } from '../ai.constants.js';
 import type { AiModuleOptions } from '../interfaces/ai-module-options.interface.js';
 import { ProviderRegistry } from './provider-registry.js';
 
-async function makeRegistry(options: AiModuleOptions): Promise<ProviderRegistry> {
+async function makeRegistry(
+  options: AiModuleOptions,
+): Promise<ProviderRegistry> {
   const registry = new ProviderRegistry(options);
   await registry.onModuleInit();
   return registry;
@@ -22,7 +24,9 @@ describe('ProviderRegistry', () => {
     const registry = await makeRegistry({
       providers: { openai: { apiKey: 'test' } },
     });
-    expect(registry.getLanguageModel('gpt-4o-mini').modelId).toBe('gpt-4o-mini');
+    expect(registry.getLanguageModel('gpt-4o-mini').modelId).toBe(
+      'gpt-4o-mini',
+    );
   });
 
   it('falls back to defaultModel when no id is passed', async () => {
@@ -53,9 +57,9 @@ describe('ProviderRegistry', () => {
     const registry = await makeRegistry({
       providers: { anthropic: { apiKey: 'test' } },
     });
-    expect(() =>
-      registry.getEmbeddingModel('anthropic:whatever'),
-    ).toThrowError(/embedding|textEmbeddingModel/i);
+    expect(() => registry.getEmbeddingModel('anthropic:whatever')).toThrowError(
+      /embedding|textEmbeddingModel/i,
+    );
   });
 
   it('resolves image, speech and transcription models', async () => {
@@ -81,25 +85,25 @@ describe('ProviderRegistry', () => {
     const registry = await makeRegistry({
       providers: { anthropic: { apiKey: 'test' } },
     });
-    expect(() => registry.getImageModel('anthropic:x')).toThrowError(
-      /image/i,
-    );
+    expect(() => registry.getImageModel('anthropic:x')).toThrowError(/image/i);
   });
 
   it('throws for an unconfigured provider', async () => {
     const registry = await makeRegistry({
       providers: { openai: { apiKey: 'test' } },
     });
-    expect(() => registry.getLanguageModel('google:gemini-1.5-pro')).toThrowError(
-      /not configured/,
-    );
+    expect(() =>
+      registry.getLanguageModel('google:gemini-1.5-pro'),
+    ).toThrowError(/not configured/);
   });
 
   it('throws when no model and no default are available', async () => {
     const registry = await makeRegistry({
       providers: { openai: { apiKey: 'test' } },
     });
-    expect(() => registry.getLanguageModel()).toThrowError(/No model specified/);
+    expect(() => registry.getLanguageModel()).toThrowError(
+      /No model specified/,
+    );
   });
 
   it('is constructible from the DI token value', () => {

@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  interpolate,
-  type PromptDefinition,
-} from './prompt.types.js';
+import { interpolate, type PromptDefinition } from './prompt.types.js';
 
 /** Marker for the unversioned entry of a prompt. */
 const DEFAULT_VERSION = '__default__';

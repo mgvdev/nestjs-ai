@@ -58,7 +58,9 @@ describe('phase 3 module wiring', () => {
 
   it('omits optional tokens when not configured', async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } })],
+      imports: [
+        AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } }),
+      ],
     }).compile();
     await moduleRef.init();
     // AI_CACHE / APPROVAL_GATE are not registered unless configured.

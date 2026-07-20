@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import type {
-  EvalCase,
-  EvalReport,
-  EvalResult,
-  Judge,
-} from './eval.types.js';
+import type { EvalCase, EvalReport, EvalResult, Judge } from './eval.types.js';
 
 /** Minimal agent shape the runner needs. */
 export interface RunnableAgent {
@@ -67,7 +62,11 @@ export class EvalRunner {
 export function defaultJudge(threshold: number): Judge {
   return ({ case: evalCase, output }) => {
     if (evalCase.expected == null) {
-      return { score: 0, passed: false, reasoning: 'no expected value or judge' };
+      return {
+        score: 0,
+        passed: false,
+        reasoning: 'no expected value or judge',
+      };
     }
     const score = output.includes(evalCase.expected) ? 1 : 0;
     return { score, passed: score >= threshold };

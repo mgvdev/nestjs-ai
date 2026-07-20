@@ -60,7 +60,9 @@ describe('multi-agent orchestration', () => {
     ]);
 
     const moduleRef = await Test.createTestingModule({
-      imports: [AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } })],
+      imports: [
+        AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } }),
+      ],
       providers: [ResearchAgent, SupervisorAgent],
     })
       .overrideProvider(ProviderRegistry)
@@ -75,10 +77,12 @@ describe('multi-agent orchestration', () => {
     await moduleRef.init();
 
     const registry = moduleRef.get(AgentRegistry);
-    expect(registry.all().map((a) => a.name).sort()).toEqual([
-      'ResearchAgent',
-      'SupervisorAgent',
-    ]);
+    expect(
+      registry
+        .all()
+        .map((a) => a.name)
+        .sort(),
+    ).toEqual(['ResearchAgent', 'SupervisorAgent']);
 
     const supervisor = moduleRef.get(SupervisorAgent);
     const result = await supervisor.run('Answer my question');

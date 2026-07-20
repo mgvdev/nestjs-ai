@@ -11,7 +11,11 @@ import {
 describe('QdrantVectorStore', () => {
   it('upserts points with content in the payload', async () => {
     const upsert = vi.fn(async () => ({}));
-    const client = { upsert, search: vi.fn(), delete: vi.fn() } as QdrantClientLike;
+    const client = {
+      upsert,
+      search: vi.fn(),
+      delete: vi.fn(),
+    } as QdrantClientLike;
     const store = new QdrantVectorStore(client, { collection: 'docs' });
     await store.upsert([
       { id: 'a', content: 'hello', embedding: [0.1], metadata: { lang: 'en' } },
@@ -28,7 +32,11 @@ describe('QdrantVectorStore', () => {
     const search = vi.fn(async () => [
       { id: 'a', score: 0.9, payload: { content: 'hello', lang: 'en' } },
     ]);
-    const client = { upsert: vi.fn(), search, delete: vi.fn() } as QdrantClientLike;
+    const client = {
+      upsert: vi.fn(),
+      search,
+      delete: vi.fn(),
+    } as QdrantClientLike;
     const store = new QdrantVectorStore(client, { collection: 'docs' });
     const out = await store.query([0.1], { topK: 3, filter: { lang: 'en' } });
 

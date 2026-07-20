@@ -39,7 +39,9 @@ describe('Moderation', () => {
   it('blocks a deny-listed term', async () => {
     const Guard = createModerationGuardrail({ blocked: ['forbidden'] });
     await expect(
-      new Guard().beforeRun!(ctx([{ role: 'user', content: 'this is Forbidden' }])),
+      new Guard().beforeRun!(
+        ctx([{ role: 'user', content: 'this is Forbidden' }]),
+      ),
     ).rejects.toThrow(ContentBlockedError);
   });
 

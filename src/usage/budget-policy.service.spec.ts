@@ -63,11 +63,7 @@ describe('BudgetPolicy', () => {
 
   function agentWithBudget(budget: any): object {
     class Agent {}
-    Reflect.defineMetadata(
-      AGENT_METADATA,
-      { budget, model: 'gpt' },
-      Agent,
-    );
+    Reflect.defineMetadata(AGENT_METADATA, { budget, model: 'gpt' }, Agent);
     return new Agent();
   }
 
@@ -167,9 +163,10 @@ describe('BudgetPolicy', () => {
 
   it('calls agent callback and blocks with custom reason', async () => {
     class Agent implements OnBudgetExceeded {
-      onBudgetExceeded = vi
-        .fn()
-        .mockResolvedValue({ action: 'block' as const, reason: 'agent-blocked' });
+      onBudgetExceeded = vi.fn().mockResolvedValue({
+        action: 'block' as const,
+        reason: 'agent-blocked',
+      });
     }
     const instance = new Agent();
     const policy = await build({ budget: { maxTotalTokensPerRun: 1 } });
@@ -188,7 +185,10 @@ describe('BudgetPolicy', () => {
         .fn()
         .mockResolvedValue({ action: 'block', reason: 'global' }),
     };
-    const policy = await build({ budget: { maxTotalTokensPerRun: 1 } }, handler);
+    const policy = await build(
+      { budget: { maxTotalTokensPerRun: 1 } },
+      handler,
+    );
     await expect(
       policy.enforceRunBudget(
         {},
@@ -227,9 +227,7 @@ describe('BudgetPolicy', () => {
 
   it('calls beforeRunBudget agent callback and respects allow', async () => {
     class Agent implements OnBudgetExceeded {
-      beforeRunBudget = vi
-        .fn()
-        .mockResolvedValue({ action: 'allow' as const });
+      beforeRunBudget = vi.fn().mockResolvedValue({ action: 'allow' as const });
     }
     const instance = new Agent();
     const policy = await build({});
@@ -258,9 +256,9 @@ describe('BudgetPolicy', () => {
         .mockResolvedValue({ action: 'block', reason: 'global' }),
     };
     const policy = await build({}, handler);
-    await expect(
-      policy.beforeRunBudget({}, ctx('A', {})),
-    ).rejects.toThrow('global');
+    await expect(policy.beforeRunBudget({}, ctx('A', {}))).rejects.toThrow(
+      'global',
+    );
   });
 
   it('calls afterRunBudget on agent and global handler', async () => {
@@ -300,4 +298,3 @@ describe('BudgetPolicy', () => {
     expect(globalCalled).toBe(true);
   });
 });
-

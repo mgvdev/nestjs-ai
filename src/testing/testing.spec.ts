@@ -21,7 +21,9 @@ describe('createMockModel', () => {
 describe('createEmbeddingMock', () => {
   it('produces vectors from the given fn', async () => {
     const model = createEmbeddingMock((v) => [v.length]);
-    const { embeddings } = await model.doEmbed({ values: ['ab', 'abc'] } as any);
+    const { embeddings } = await model.doEmbed({
+      values: ['ab', 'abc'],
+    } as any);
     expect(embeddings).toEqual([[2], [3]]);
   });
 });

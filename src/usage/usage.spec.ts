@@ -13,8 +13,13 @@ describe('pricing', () => {
   });
 
   it('computes cost from tokens', () => {
-    const cost = costOf({ inputTokens: 1_000_000, outputTokens: 1_000_000 }, 'gpt-4o');
-    expect(cost).toBeCloseTo(DEFAULT_PRICING['gpt-4o'].input + DEFAULT_PRICING['gpt-4o'].output);
+    const cost = costOf(
+      { inputTokens: 1_000_000, outputTokens: 1_000_000 },
+      'gpt-4o',
+    );
+    expect(cost).toBeCloseTo(
+      DEFAULT_PRICING['gpt-4o'].input + DEFAULT_PRICING['gpt-4o'].output,
+    );
   });
 
   it('returns 0 for an unknown model', () => {
@@ -41,13 +46,19 @@ describe('UsageTracker', () => {
     });
     expect(t.totals('c1').inputTokens).toBe(2_000_000);
     expect(t.totals('c1').runs).toBe(2);
-    expect(t.totals('c1').cost).toBeCloseTo(2 * DEFAULT_PRICING['gpt-4o'].input);
+    expect(t.totals('c1').cost).toBeCloseTo(
+      2 * DEFAULT_PRICING['gpt-4o'].input,
+    );
     expect(t.totals().runs).toBe(2); // global
   });
 
   it('resets a conversation', () => {
     const t = tracker();
-    t.record({ model: 'gpt-4o', usage: { inputTokens: 10 }, conversationId: 'c' });
+    t.record({
+      model: 'gpt-4o',
+      usage: { inputTokens: 10 },
+      conversationId: 'c',
+    });
     t.reset('c');
     expect(t.totals('c').runs).toBe(0);
   });
@@ -57,7 +68,12 @@ describe('BudgetGuard', () => {
   const options: AiModuleOptions = { maxCostPerConversation: 5 };
 
   function ctx(conversationId?: string): GuardrailContext {
-    return { agent: 'A', agentInstance: {}, messages: [], options: { conversationId } };
+    return {
+      agent: 'A',
+      agentInstance: {},
+      messages: [],
+      options: { conversationId },
+    };
   }
 
   it('allows runs under budget', () => {

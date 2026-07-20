@@ -24,7 +24,10 @@ import type { ConversationStore } from './memory/conversation-store.interface.js
 import { UsageTracker } from './usage/usage-tracker.service.js';
 import { RunBudgetExceededError } from './usage/run-budget-exceeded.error.js';
 import type { OnBudgetExceeded } from './usage/on-budget-exceeded.interface.js';
-import type { BudgetDecision, BudgetExceededContext } from './usage/budget.types.js';
+import type {
+  BudgetDecision,
+  BudgetExceededContext,
+} from './usage/budget.types.js';
 
 const USAGE = { inputTokens: 1, outputTokens: 1, totalTokens: 2 };
 const STREAM_USAGE = {
@@ -82,7 +85,8 @@ class RunCounter implements GuardrailContract {
 }
 
 async function drain(stream: AsyncIterable<unknown>): Promise<void> {
-  for await (const _chunk of stream) {}
+  for await (const _chunk of stream) {
+  }
 }
 
 describe('run budget integration', () => {
@@ -228,8 +232,9 @@ describe('phase 2 integration', () => {
       USAGE.inputTokens,
     );
     expect(moduleRef.get(RunCounter)).toMatchObject({ before: 1, after: 1 });
-    expect(await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'))
-      .toHaveLength(2);
+    expect(
+      await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'),
+    ).toHaveLength(2);
     expect(events).toEqual(['run', 'stream']);
     await moduleRef.close();
   });

@@ -54,10 +54,7 @@ export class PrismaConversationStore implements ConversationStore {
     })) as AiMessage[];
   }
 
-  async append(
-    conversationId: string,
-    messages: AiMessage[],
-  ): Promise<void> {
+  async append(conversationId: string, messages: AiMessage[]): Promise<void> {
     if (messages.length === 0) {
       return;
     }

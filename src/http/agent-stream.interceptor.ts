@@ -29,11 +29,10 @@ import {
 export class AgentStreamInterceptor implements NestInterceptor {
   constructor(private readonly options: PipeAgentStreamOptions = {}) {}
 
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<never> {
-    const res = context.switchToHttp().getResponse<import('node:http').ServerResponse>();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<never> {
+    const res = context
+      .switchToHttp()
+      .getResponse<import('node:http').ServerResponse>();
     return next.handle().pipe(
       mergeMap((result: PipeableStreamResult) => {
         pipeAgentStream(result, res, this.options);

@@ -7,7 +7,11 @@ import {
 import { Inject } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { tool, type Tool as AiTool, type ToolSet } from 'ai';
-import { AGENT_METADATA, APPROVAL_GATE, TOOL_METADATA } from '../ai.constants.js';
+import {
+  AGENT_METADATA,
+  APPROVAL_GATE,
+  TOOL_METADATA,
+} from '../ai.constants.js';
 import { AiEventEmitter } from '../observability/ai-event-emitter.js';
 import { AI_EVENTS } from '../observability/ai-events.js';
 import { GuardrailRegistry } from '../observability/guardrail.registry.js';
@@ -44,7 +48,9 @@ export class ToolRegistry implements OnModuleInit {
     private readonly reflector: Reflector,
     @Optional() private readonly events?: AiEventEmitter,
     @Optional() private readonly guardrails?: GuardrailRegistry,
-    @Optional() @Inject(APPROVAL_GATE) private readonly approvalGate?: ApprovalGate,
+    @Optional()
+    @Inject(APPROVAL_GATE)
+    private readonly approvalGate?: ApprovalGate,
     @Optional() private readonly agentRegistry?: AgentRegistry,
   ) {}
 

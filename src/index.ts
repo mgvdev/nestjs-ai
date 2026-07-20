@@ -49,15 +49,24 @@ export type { ConversationStore } from './memory/conversation-store.interface.js
 export { InMemoryConversationStore } from './memory/in-memory-conversation.store.js';
 
 // Embeddings
-export { EmbeddingsService, type EmbedOptions } from './embeddings/embeddings.service.js';
+export {
+  EmbeddingsService,
+  type EmbedOptions,
+} from './embeddings/embeddings.service.js';
 
 // Messages
 export type { AiMessage, AiInput } from './messages/message.types.js';
 export { toMessages } from './messages/message.types.js';
 
 // Multimodal
-export { ImageService, type GenerateImageOptions } from './multimodal/image.service.js';
-export { SpeechService, type GenerateSpeechOptions } from './multimodal/speech.service.js';
+export {
+  ImageService,
+  type GenerateImageOptions,
+} from './multimodal/image.service.js';
+export {
+  SpeechService,
+  type GenerateSpeechOptions,
+} from './multimodal/speech.service.js';
 export {
   TranscriptionService,
   type TranscribeOptions,
@@ -172,8 +181,14 @@ export {
 } from './mcp/mcp.service.js';
 
 // Background jobs (requires optional peer `bullmq`)
-export { AgentJobsModule, type AgentJobsOptions } from './jobs/agent-jobs.module.js';
-export { AgentQueueService, AGENT_JOB_NAME } from './jobs/agent-queue.service.js';
+export {
+  AgentJobsModule,
+  type AgentJobsOptions,
+} from './jobs/agent-jobs.module.js';
+export {
+  AgentQueueService,
+  AGENT_JOB_NAME,
+} from './jobs/agent-queue.service.js';
 export { AgentJobProcessor } from './jobs/agent-job.processor.js';
 export type { AgentJobData, QueueLike } from './jobs/agent-job.types.js';
 

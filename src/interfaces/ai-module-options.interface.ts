@@ -11,7 +11,9 @@ export type ConversationStoreProvider =
   | Type<ConversationStore>
   | { useClass: Type<ConversationStore> }
   | {
-      useFactory: (...args: any[]) => ConversationStore | Promise<ConversationStore>;
+      useFactory: (
+        ...args: any[]
+      ) => ConversationStore | Promise<ConversationStore>;
       inject?: any[];
     }
   | { useValue: ConversationStore };
@@ -68,22 +70,26 @@ export interface AiModuleOptions {
   /** Guardrail provider classes to register (also discovered via `@Guardrail`). */
   guardrails?: import('@nestjs/common').Type<any>[];
   /** Custom vector store provider (defaults to `InMemoryVectorStore`). */
-  vectorStore?: import('@nestjs/common').Type<any> | {
-    useClass?: import('@nestjs/common').Type<any>;
-    useFactory?: (...args: any[]) => any;
-    useValue?: any;
-    inject?: any[];
-  };
+  vectorStore?:
+    | import('@nestjs/common').Type<any>
+    | {
+        useClass?: import('@nestjs/common').Type<any>;
+        useFactory?: (...args: any[]) => any;
+        useValue?: any;
+        inject?: any[];
+      };
   /**
    * Response/embedding cache. When set, resolved language models are wrapped
    * with a caching middleware and embeddings are cached.
    */
-  cache?: import('@nestjs/common').Type<any> | {
-    useClass?: import('@nestjs/common').Type<any>;
-    useFactory?: (...args: any[]) => any;
-    useValue?: any;
-    inject?: any[];
-  };
+  cache?:
+    | import('@nestjs/common').Type<any>
+    | {
+        useClass?: import('@nestjs/common').Type<any>;
+        useFactory?: (...args: any[]) => any;
+        useValue?: any;
+        inject?: any[];
+      };
   /** TTL (ms) for cached generations/embeddings. Default: no expiry. */
   cacheTtlMs?: number;
   /** Per-model USD pricing (per 1M tokens) for cost tracking. */
@@ -93,28 +99,36 @@ export interface AiModuleOptions {
   /** Per-run USD cost and token limits. */
   budget?: BudgetLimits;
   /** Global handler invoked when a run exceeds its configured budget. */
-  budgetExceededHandler?: Type<BudgetExceededHandler> | {
-    useClass?: Type<BudgetExceededHandler>;
-    useFactory?: (...args: any[]) => BudgetExceededHandler | Promise<BudgetExceededHandler>;
-    useValue?: BudgetExceededHandler;
-    inject?: any[];
-  };
+  budgetExceededHandler?:
+    | Type<BudgetExceededHandler>
+    | {
+        useClass?: Type<BudgetExceededHandler>;
+        useFactory?: (
+          ...args: any[]
+        ) => BudgetExceededHandler | Promise<BudgetExceededHandler>;
+        useValue?: BudgetExceededHandler;
+        inject?: any[];
+      };
   /** Rate limiter for throttling agent runs. */
-  rateLimiter?: import('@nestjs/common').Type<any> | {
-    useClass?: import('@nestjs/common').Type<any>;
-    useFactory?: (...args: any[]) => any;
-    useValue?: any;
-    inject?: any[];
-  };
+  rateLimiter?:
+    | import('@nestjs/common').Type<any>
+    | {
+        useClass?: import('@nestjs/common').Type<any>;
+        useFactory?: (...args: any[]) => any;
+        useValue?: any;
+        inject?: any[];
+      };
   /** Reranking model id (e.g. `"cohere:rerank-v3.5"`) for `ModelReranker`. */
   rerankingModel?: string;
   /** Approval gate for tools flagged `requiresApproval` (defaults to auto-approve). */
-  approvalGate?: import('@nestjs/common').Type<any> | {
-    useClass?: import('@nestjs/common').Type<any>;
-    useFactory?: (...args: any[]) => any;
-    useValue?: any;
-    inject?: any[];
-  };
+  approvalGate?:
+    | import('@nestjs/common').Type<any>
+    | {
+        useClass?: import('@nestjs/common').Type<any>;
+        useFactory?: (...args: any[]) => any;
+        useValue?: any;
+        inject?: any[];
+      };
   /**
    * Optional conversation store provider. When omitted an in-memory store is
    * registered. Use `useClass`/`useFactory`/`useValue` to plug a custom store.
@@ -126,11 +140,8 @@ export interface AiModuleOptions {
  * Async configuration for `AiModule.forRootAsync`, allowing the options to be
  * built from injected dependencies such as `ConfigService`.
  */
-export interface AiModuleAsyncOptions
-  extends Pick<ModuleMetadata, 'imports'> {
-  useFactory: (
-    ...args: any[]
-  ) => Promise<AiModuleOptions> | AiModuleOptions;
+export interface AiModuleAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
+  useFactory: (...args: any[]) => Promise<AiModuleOptions> | AiModuleOptions;
   inject?: any[];
   /**
    * Optional conversation store provider registered alongside the async

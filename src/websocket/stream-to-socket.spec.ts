@@ -21,7 +21,9 @@ describe('streamAgentToSocket', () => {
     expect(text).toBe('Hello world');
     expect(emit).toHaveBeenNthCalledWith(1, 'agent:chunk', { delta: 'Hello' });
     expect(emit).toHaveBeenNthCalledWith(2, 'agent:chunk', { delta: ' world' });
-    expect(emit).toHaveBeenNthCalledWith(3, 'agent:done', { text: 'Hello world' });
+    expect(emit).toHaveBeenNthCalledWith(3, 'agent:done', {
+      text: 'Hello world',
+    });
   });
 
   it('emits error and rethrows on failure', async () => {
@@ -34,16 +36,22 @@ describe('streamAgentToSocket', () => {
         },
       },
     };
-    await expect(streamAgentToSocket(failing, { emit })).rejects.toThrow('boom');
+    await expect(streamAgentToSocket(failing, { emit })).rejects.toThrow(
+      'boom',
+    );
     expect(emit).toHaveBeenCalledWith('agent:error', { message: 'boom' });
   });
 
   it('honors custom event names', async () => {
     const emit = vi.fn();
-    await streamAgentToSocket({ textStream: textStream(['x']) }, { emit }, {
-      chunkEvent: 'c',
-      doneEvent: 'd',
-    });
+    await streamAgentToSocket(
+      { textStream: textStream(['x']) },
+      { emit },
+      {
+        chunkEvent: 'c',
+        doneEvent: 'd',
+      },
+    );
     expect(emit).toHaveBeenCalledWith('c', { delta: 'x' });
     expect(emit).toHaveBeenCalledWith('d', { text: 'x' });
   });

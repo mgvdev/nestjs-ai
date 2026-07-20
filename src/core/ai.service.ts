@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  generateObject,
-  generateText,
-  streamObject,
-  streamText,
-} from 'ai';
+import { generateObject, generateText, streamObject, streamText } from 'ai';
 import { ProviderRegistry } from './provider-registry.js';
 import { ToolRegistry, type ToolRef } from '../tools/tool.registry.js';
 
@@ -34,7 +29,9 @@ export class AiService {
   generateText(
     params: NestAiParams<typeof generateText>,
   ): ReturnType<typeof generateText> {
-    return generateText(this.resolve(params) as Parameters<typeof generateText>[0]);
+    return generateText(
+      this.resolve(params) as Parameters<typeof generateText>[0],
+    );
   }
 
   streamText(
@@ -46,16 +43,22 @@ export class AiService {
   generateObject(
     params: NestAiParams<typeof generateObject>,
   ): ReturnType<typeof generateObject> {
-    return generateObject(this.resolve(params) as Parameters<typeof generateObject>[0]);
+    return generateObject(
+      this.resolve(params) as Parameters<typeof generateObject>[0],
+    );
   }
 
   streamObject(
     params: NestAiParams<typeof streamObject>,
   ): ReturnType<typeof streamObject> {
-    return streamObject(this.resolve(params) as Parameters<typeof streamObject>[0]);
+    return streamObject(
+      this.resolve(params) as Parameters<typeof streamObject>[0],
+    );
   }
 
-  private resolve(params: { model?: string; tools?: ToolRef[] } & Record<string, unknown>) {
+  private resolve(
+    params: { model?: string; tools?: ToolRef[] } & Record<string, unknown>,
+  ) {
     const { model, tools, ...rest } = params;
     return {
       ...rest,

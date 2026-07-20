@@ -226,7 +226,8 @@ function retryingStreamingModel(): MockLanguageModelV3 {
 }
 
 async function drain(stream: AsyncIterable<unknown>): Promise<void> {
-  for await (const _chunk of stream) {}
+  for await (const _chunk of stream) {
+  }
 }
 
 describe('AgentExecutorService (integration)', () => {
@@ -267,7 +268,9 @@ describe('AgentExecutorService (integration)', () => {
   it('produces structured output when the agent declares a schema', async () => {
     currentModel = new MockLanguageModelV3({
       doGenerate: {
-        content: [{ type: 'text', text: JSON.stringify({ sentiment: 'positive' }) }],
+        content: [
+          { type: 'text', text: JSON.stringify({ sentiment: 'positive' }) },
+        ],
         finishReason: 'stop',
         usage: USAGE,
         warnings: [],
@@ -290,7 +293,10 @@ describe('AgentExecutorService (integration)', () => {
       usage: USAGE,
       warnings: [],
     });
-    currentModel = sequencedModel([reply('First reply.'), reply('Second reply.')]);
+    currentModel = sequencedModel([
+      reply('First reply.'),
+      reply('Second reply.'),
+    ]);
 
     const moduleRef = await bootstrapWith();
     const agent = moduleRef.get(WeatherAgent);
@@ -341,10 +347,14 @@ describe('AgentExecutorService (integration)', () => {
     await drain(result.textStream);
 
     expect(usage.totals('conv-1').inputTokens).toBe(USAGE.inputTokens);
-    expect(moduleRef.get(RecordingGuardrail)).toMatchObject({ before: 1, after: 1 });
+    expect(moduleRef.get(RecordingGuardrail)).toMatchObject({
+      before: 1,
+      after: 1,
+    });
     expect(moduleRef.get(StreamingBudgetAgent).after).toBe(1);
-    expect(await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'))
-      .toHaveLength(2);
+    expect(
+      await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'),
+    ).toHaveLength(2);
     expect(events).toEqual(['run', 'stream']);
     await moduleRef.close();
   });
@@ -358,7 +368,9 @@ describe('AgentExecutorService (integration)', () => {
     const usage = moduleRef.get(UsageTracker);
     const store = moduleRef.get<ConversationStore>(CONVERSATION_STORE);
 
-    const result = await agent.stream('I love this!', { conversationId: 'conv-1' });
+    const result = await agent.stream('I love this!', {
+      conversationId: 'conv-1',
+    });
     if (!('partialObjectStream' in result)) {
       throw new Error('Expected a structured stream result.');
     }
@@ -385,7 +397,9 @@ describe('AgentExecutorService (integration)', () => {
     emitter.on(AI_EVENTS.agentRunFinish, () => successes++);
     emitter.on(AI_EVENTS.streamFinish, () => successes++);
 
-    const result = await agent.stream('Classify this', { conversationId: 'conv-1' });
+    const result = await agent.stream('Classify this', {
+      conversationId: 'conv-1',
+    });
     if (!('partialObjectStream' in result)) {
       throw new Error('Expected a structured stream result.');
     }
@@ -393,8 +407,9 @@ describe('AgentExecutorService (integration)', () => {
 
     expect(errors).toBe(1);
     expect(successes).toBe(0);
-    expect(await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'))
-      .toEqual([]);
+    expect(
+      await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'),
+    ).toEqual([]);
     await moduleRef.close();
   });
 
@@ -429,8 +444,9 @@ describe('AgentExecutorService (integration)', () => {
 
     expect(errors).toBe(1);
     expect(successes).toBe(0);
-    expect(await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'))
-      .toEqual([]);
+    expect(
+      await moduleRef.get<ConversationStore>(CONVERSATION_STORE).load('conv-1'),
+    ).toEqual([]);
     await moduleRef.close();
   });
 
@@ -487,7 +503,9 @@ describe('AgentExecutorService (integration)', () => {
     await drain(result.textStream);
 
     expect((currentModel as MockLanguageModelV3).doStreamCalls).toHaveLength(1);
-    expect((currentModel as MockLanguageModelV3).doStreamCalls[0].prompt).toContainEqual(
+    expect(
+      (currentModel as MockLanguageModelV3).doStreamCalls[0].prompt,
+    ).toContainEqual(
       expect.objectContaining({
         role: 'user',
         content: expect.arrayContaining([
@@ -495,7 +513,9 @@ describe('AgentExecutorService (integration)', () => {
         ]),
       }),
     );
-    expect((currentModel as MockLanguageModelV3).doStreamCalls[0].prompt).toContainEqual(
+    expect(
+      (currentModel as MockLanguageModelV3).doStreamCalls[0].prompt,
+    ).toContainEqual(
       expect.objectContaining({
         role: 'system',
         content: 'Guardrail instruction',
@@ -509,9 +529,9 @@ describe('AgentExecutorService (integration)', () => {
     currentModel = streamingModel('never reached');
     const moduleRef = await bootstrapWith({ providers: [BlockingBudgetAgent] });
 
-    await expect(moduleRef.get(BlockingBudgetAgent).stream('blocked')).rejects.toThrow(
-      'no-credits-left',
-    );
+    await expect(
+      moduleRef.get(BlockingBudgetAgent).stream('blocked'),
+    ).rejects.toThrow('no-credits-left');
     expect((currentModel as MockLanguageModelV3).doStreamCalls).toHaveLength(0);
     await moduleRef.close();
   });

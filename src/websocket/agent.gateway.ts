@@ -5,10 +5,7 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { AgentRegistry } from '../agent/orchestration/agent-registry.js';
-import {
-  streamAgentToSocket,
-  type SocketLike,
-} from './stream-to-socket.js';
+import { streamAgentToSocket, type SocketLike } from './stream-to-socket.js';
 
 /** Payload for the `agent:run` message. */
 export interface AgentRunMessage {

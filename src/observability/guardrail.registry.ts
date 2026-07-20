@@ -2,10 +2,7 @@ import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
 import { GUARDRAIL_METADATA } from '../ai.constants.js';
 import type { AgentResult } from '../agent/agent.interface.js';
-import type {
-  Guardrail,
-  GuardrailContext,
-} from './guardrail.interface.js';
+import type { Guardrail, GuardrailContext } from './guardrail.interface.js';
 
 /**
  * Collects all `@Guardrail`-decorated providers and runs their hooks in
@@ -41,10 +38,7 @@ export class GuardrailRegistry implements OnModuleInit {
     }
   }
 
-  async runAfterRun(
-    ctx: GuardrailContext,
-    result: AgentResult,
-  ): Promise<void> {
+  async runAfterRun(ctx: GuardrailContext, result: AgentResult): Promise<void> {
     for (const guardrail of this.guardrails) {
       await guardrail.afterRun?.(ctx, result);
     }

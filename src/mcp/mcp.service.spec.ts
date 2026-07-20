@@ -39,7 +39,10 @@ describe('McpService', () => {
     const set = await service.connect('weather', client);
 
     expect(Object.keys(set)).toEqual(['get_weather']);
-    const output = await (set.get_weather as any).execute({ city: 'Paris' }, {});
+    const output = await (set.get_weather as any).execute(
+      { city: 'Paris' },
+      {},
+    );
     expect(output).toBe('weather in Paris: sunny');
   });
 

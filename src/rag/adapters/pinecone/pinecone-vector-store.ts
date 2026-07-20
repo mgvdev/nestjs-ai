@@ -15,7 +15,9 @@ export interface PineconeIndexLike {
     topK: number;
     includeMetadata?: boolean;
     filter?: Record<string, unknown>;
-  }): Promise<{ matches?: Array<{ id: string; score?: number; metadata?: any }> }>;
+  }): Promise<{
+    matches?: Array<{ id: string; score?: number; metadata?: any }>;
+  }>;
   deleteMany(ids: string[]): Promise<unknown>;
   deleteAll(): Promise<unknown>;
 }

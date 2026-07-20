@@ -27,9 +27,9 @@ describe('PgVectorStore', () => {
   it('throws when a document lacks an embedding', async () => {
     const { pool } = fakePool();
     const store = new PgVectorStore(pool);
-    await expect(
-      store.upsert([{ id: 'a', content: 'x' }]),
-    ).rejects.toThrow(/no embedding/);
+    await expect(store.upsert([{ id: 'a', content: 'x' }])).rejects.toThrow(
+      /no embedding/,
+    );
   });
 
   it('queries by cosine distance and maps rows to results', async () => {

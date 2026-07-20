@@ -34,21 +34,29 @@ class CustomStore implements ConversationStore {
 describe('AiModule', () => {
   it('wires core services with forRoot and defaults to the in-memory store', async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } })],
+      imports: [
+        AiModule.forRoot({ providers: { openai: { apiKey: 'test' } } }),
+      ],
     }).compile();
     await moduleRef.init();
 
     expect(moduleRef.get(AiService)).toBeInstanceOf(AiService);
-    expect(moduleRef.get(AgentExecutorService)).toBeInstanceOf(AgentExecutorService);
+    expect(moduleRef.get(AgentExecutorService)).toBeInstanceOf(
+      AgentExecutorService,
+    );
     expect(moduleRef.get(EmbeddingsService)).toBeInstanceOf(EmbeddingsService);
     expect(moduleRef.get(ImageService)).toBeInstanceOf(ImageService);
     expect(moduleRef.get(SpeechService)).toBeInstanceOf(SpeechService);
-    expect(moduleRef.get(TranscriptionService)).toBeInstanceOf(TranscriptionService);
+    expect(moduleRef.get(TranscriptionService)).toBeInstanceOf(
+      TranscriptionService,
+    );
     expect(moduleRef.get(RagService)).toBeInstanceOf(RagService);
     expect(moduleRef.get(PromptRegistry)).toBeInstanceOf(PromptRegistry);
     expect(moduleRef.get(AiEventEmitter)).toBeInstanceOf(AiEventEmitter);
     expect(moduleRef.get(GuardrailRegistry)).toBeInstanceOf(GuardrailRegistry);
-    expect(moduleRef.get(CONVERSATION_STORE)).toBeInstanceOf(InMemoryConversationStore);
+    expect(moduleRef.get(CONVERSATION_STORE)).toBeInstanceOf(
+      InMemoryConversationStore,
+    );
     expect(moduleRef.get(VECTOR_STORE)).toBeInstanceOf(InMemoryVectorStore);
     await moduleRef.close();
   });

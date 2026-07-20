@@ -131,7 +131,9 @@ export class AiModule {
         ...(options.maxCostPerConversation != null ? [BudgetGuard] : []),
         ...(options.rateLimiter ? [RateLimitGuardrail] : []),
         ...(options.budget != null ? [RunBudgetGuardrail] : []),
-        ...AiModule.budgetExceededHandlerProvider(options.budgetExceededHandler),
+        ...AiModule.budgetExceededHandlerProvider(
+          options.budgetExceededHandler,
+        ),
         ...AiModule.coreProviders(),
         AiModule.initializerProvider(),
       ],
@@ -171,7 +173,12 @@ export class AiModule {
     token: symbol,
     config:
       | Type<any>
-      | { useClass?: Type<any>; useFactory?: (...a: any[]) => any; useValue?: any; inject?: any[] }
+      | {
+          useClass?: Type<any>;
+          useFactory?: (...a: any[]) => any;
+          useValue?: any;
+          inject?: any[];
+        }
       | undefined,
   ): Provider[] {
     if (!config) {

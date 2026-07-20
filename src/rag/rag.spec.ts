@@ -95,10 +95,7 @@ describe('RagService', () => {
     const { rag } = makeRag();
     await rag.ingest([{ id: 'cat', content: 'Cats purr when happy.' }]);
     const retrieval = createRetrievalTool(rag, { topK: 1 });
-    const output = await retrieval.execute!(
-      { query: 'cat facts' },
-      {} as any,
-    );
+    const output = await retrieval.execute!({ query: 'cat facts' }, {} as any);
     expect(output).toContain('Cats purr');
   });
 });

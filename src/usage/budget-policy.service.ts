@@ -148,10 +148,7 @@ export class BudgetPolicy {
     };
   }
 
-  private resolveModel(
-    ctx: GuardrailContext,
-    agentInstance: object,
-  ): string {
+  private resolveModel(ctx: GuardrailContext, agentInstance: object): string {
     const agentOptions = Reflect.getMetadata(
       AGENT_METADATA,
       agentInstance.constructor,

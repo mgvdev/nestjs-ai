@@ -7,9 +7,7 @@ const ZERO_USAGE = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
  * Builds a mock language model that returns the given text reply(ies). An array
  * yields one reply per successive call (multi-step); the last is reused after.
  */
-export function createMockModel(
-  replies: string | string[],
-): LanguageModelV3 {
+export function createMockModel(replies: string | string[]): LanguageModelV3 {
   const texts = Array.isArray(replies) ? replies : [replies];
   const results = texts.map((text) => ({
     content: [{ type: 'text', text }],

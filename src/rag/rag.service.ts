@@ -52,21 +52,29 @@ export class RagService {
   ) {}
 
   /** Chunks, embeds, and upserts items into the vector store. */
-  async ingest(items: IngestItem[], options: IngestOptions = {}): Promise<void> {
+  async ingest(
+    items: IngestItem[],
+    options: IngestOptions = {},
+  ): Promise<void> {
     const chunkSize = options.chunkSize ?? 1000;
     const overlap = options.chunkOverlap ?? 100;
 
-    const chunks: { id: string; content: string; metadata?: Record<string, unknown> }[] =
-      [];
+    const chunks: {
+      id: string;
+      content: string;
+      metadata?: Record<string, unknown>;
+    }[] = [];
     items.forEach((item, index) => {
       const baseId = item.id ?? `doc-${index}`;
-      splitText(item.content, chunkSize, overlap).forEach((text, chunkIndex) => {
-        chunks.push({
-          id: `${baseId}#${chunkIndex}`,
-          content: text,
-          metadata: item.metadata,
-        });
-      });
+      splitText(item.content, chunkSize, overlap).forEach(
+        (text, chunkIndex) => {
+          chunks.push({
+            id: `${baseId}#${chunkIndex}`,
+            content: text,
+            metadata: item.metadata,
+          });
+        },
+      );
     });
 
     if (chunks.length === 0) {

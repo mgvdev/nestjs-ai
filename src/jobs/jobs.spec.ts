@@ -58,9 +58,9 @@ describe('AgentJobProcessor', () => {
     await moduleRef.init();
 
     const processor = moduleRef.get(AgentJobProcessor);
-    await expect(
-      processor.run({ agent: 'Nope', input: 'x' }),
-    ).rejects.toThrow(/unknown agent/);
+    await expect(processor.run({ agent: 'Nope', input: 'x' })).rejects.toThrow(
+      /unknown agent/,
+    );
     await moduleRef.close();
   });
 });

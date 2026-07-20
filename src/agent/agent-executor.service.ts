@@ -15,7 +15,11 @@ import {
 } from '../ai.constants.js';
 import type { AiModuleOptions } from '../interfaces/ai-module-options.interface.js';
 import type { ConversationStore } from '../memory/conversation-store.interface.js';
-import { type AiInput, type AiMessage, toMessages } from '../messages/message.types.js';
+import {
+  type AiInput,
+  type AiMessage,
+  toMessages,
+} from '../messages/message.types.js';
 import { ProviderRegistry } from '../core/provider-registry.js';
 import { ToolRegistry } from '../tools/tool.registry.js';
 import { AiEventEmitter } from '../observability/ai-event-emitter.js';
@@ -62,8 +66,23 @@ export class AgentExecutorService {
       const maxSteps = this.resolveMaxSteps(opts, meta);
 
       const result = schema
-        ? await this.runObject<T>(model, system, ctx.messages, schema, opts, newMessages)
-        : await this.runText<T>(model, system, ctx.messages, meta, maxSteps, opts, newMessages);
+        ? await this.runObject<T>(
+            model,
+            system,
+            ctx.messages,
+            schema,
+            opts,
+            newMessages,
+          )
+        : await this.runText<T>(
+            model,
+            system,
+            ctx.messages,
+            meta,
+            maxSteps,
+            opts,
+            newMessages,
+          );
 
       this.usageTracker?.record({
         model: (model as { modelId?: string }).modelId ?? 'unknown',
@@ -140,7 +159,11 @@ export class AgentExecutorService {
       maxRetries: opts.maxRetries ?? this.options.maxRetries,
       experimental_telemetry: this.telemetry(),
     });
-    await this.persist(opts.conversationId, newMessages, result.response.messages);
+    await this.persist(
+      opts.conversationId,
+      newMessages,
+      result.response.messages,
+    );
     return {
       text: result.text,
       steps: result.steps,
@@ -201,7 +224,8 @@ export class AgentExecutorService {
           onFinish: async ({ object, usage, error }) => {
             if (object === undefined) {
               reportErrorOnce(
-                error ?? new Error('Structured stream completed without an object.'),
+                error ??
+                  new Error('Structured stream completed without an object.'),
               );
               return;
             }
@@ -215,14 +239,9 @@ export class AgentExecutorService {
               messages: [],
             };
             try {
-              await this.completeRun(
-                agent,
-                ctx,
-                modelId,
-                result,
-                newMessages,
-                [{ role: 'assistant', content: JSON.stringify(object) }],
-              );
+              await this.completeRun(agent, ctx, modelId, result, newMessages, [
+                { role: 'assistant', content: JSON.stringify(object) },
+              ]);
             } catch (error) {
               reportErrorOnce(error);
             }
@@ -416,7 +435,11 @@ export class AgentExecutorService {
     newMessages: ReturnType<typeof toMessages>,
     responseMessages: readonly unknown[] = result.messages,
   ): Promise<void> {
-    await this.persist(ctx.options.conversationId, newMessages, responseMessages);
+    await this.persist(
+      ctx.options.conversationId,
+      newMessages,
+      responseMessages,
+    );
     this.usageTracker?.record({
       model,
       usage: result.usage,

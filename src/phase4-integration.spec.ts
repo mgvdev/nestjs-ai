@@ -64,9 +64,9 @@ describe('phase 4 integration', () => {
     expect(usage.totals('c').cost).toBeCloseTo(2.5);
 
     // Second run: blocked because the conversation is over budget.
-    await expect(
-      agent.run('again', { conversationId: 'c' }),
-    ).rejects.toThrow(BudgetExceededError);
+    await expect(agent.run('again', { conversationId: 'c' })).rejects.toThrow(
+      BudgetExceededError,
+    );
 
     await moduleRef.close();
   });

@@ -1,4 +1,9 @@
-import { Inject, Injectable, Optional, type OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Optional,
+  type OnModuleInit,
+} from '@nestjs/common';
 import {
   wrapLanguageModel,
   type EmbeddingModel,
@@ -116,9 +121,7 @@ export class ProviderRegistry implements OnModuleInit {
    * string, an `EmbeddingModel` instance, or `undefined` (using
    * `defaultEmbeddingModel`).
    */
-  getEmbeddingModel(
-    model?: string | EmbeddingModel,
-  ): EmbeddingModel {
+  getEmbeddingModel(model?: string | EmbeddingModel): EmbeddingModel {
     if (model && typeof model !== 'string') {
       return model;
     }
@@ -295,7 +298,10 @@ export class ProviderRegistry implements OnModuleInit {
         }
       }
     } catch (error) {
-      if (error instanceof Error && /Cannot find|find module/i.test(error.message)) {
+      if (
+        error instanceof Error &&
+        /Cannot find|find module/i.test(error.message)
+      ) {
         throw new Error(
           `Provider "${name}" is configured but the package "@ai-sdk/${name}" ` +
             `is not installed. Run \`npm install @ai-sdk/${name}\`.`,

@@ -27,7 +27,10 @@ function failingModel(): LanguageModelV3 {
 
 describe('createFallbackModel', () => {
   it('uses the first model when it succeeds', async () => {
-    const model = createFallbackModel([okModel('primary'), okModel('secondary')]);
+    const model = createFallbackModel([
+      okModel('primary'),
+      okModel('secondary'),
+    ]);
     const { text } = await generateText({ model, prompt: 'hi' });
     expect(text).toBe('primary');
   });

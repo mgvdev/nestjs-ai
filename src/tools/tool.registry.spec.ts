@@ -8,7 +8,10 @@ import { ToolRegistry } from './tool.registry.js';
 
 @Injectable()
 class MathTools {
-  @Tool({ description: 'Add two numbers', schema: z.object({ a: z.number(), b: z.number() }) })
+  @Tool({
+    description: 'Add two numbers',
+    schema: z.object({ a: z.number(), b: z.number() }),
+  })
   add({ a, b }: { a: number; b: number }) {
     return a + b;
   }
@@ -39,7 +42,10 @@ async function bootstrap() {
 describe('ToolRegistry', () => {
   it('discovers @Tool methods and honors custom names', async () => {
     const registry = await bootstrap();
-    const names = registry.getAll().map((t) => t.name).sort();
+    const names = registry
+      .getAll()
+      .map((t) => t.name)
+      .sort();
     expect(names).toEqual(['add', 'multiply']);
   });
 
@@ -64,6 +70,8 @@ describe('ToolRegistry', () => {
 
   it('throws on an unknown tool reference', async () => {
     const registry = await bootstrap();
-    expect(() => registry.buildToolSet(['nope'])).toThrowError(/Unknown AI tool/);
+    expect(() => registry.buildToolSet(['nope'])).toThrowError(
+      /Unknown AI tool/,
+    );
   });
 });

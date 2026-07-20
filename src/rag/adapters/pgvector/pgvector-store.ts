@@ -104,7 +104,9 @@ export class PgVectorStore implements VectorStore {
     if (ids.length === 0) {
       return;
     }
-    await this.pool.query(`DELETE FROM ${this.table} WHERE id = ANY($1)`, [ids]);
+    await this.pool.query(`DELETE FROM ${this.table} WHERE id = ANY($1)`, [
+      ids,
+    ]);
   }
 
   async clear(): Promise<void> {

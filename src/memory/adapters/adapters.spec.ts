@@ -78,7 +78,8 @@ function fakeDelegate(): PrismaConversationDelegate {
       return data;
     },
     async count({ where }) {
-      return rows.filter((r) => r.conversationId === where.conversationId).length;
+      return rows.filter((r) => r.conversationId === where.conversationId)
+        .length;
     },
     async deleteMany({ where }) {
       for (let i = rows.length - 1; i >= 0; i--) {
