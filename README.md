@@ -670,6 +670,23 @@ const { text } = await this.ai.generateText({
 | `TypeOrmConversationStore` (`/typeorm`), `PrismaConversationStore` | Durable memory |
 | `ToolRegistry` | Introspect discovered tools |
 
+## Development
+
+Linting and formatting use [oxlint](https://oxc.rs/docs/guide/usage/linter) and
+[oxfmt](https://oxc.rs/docs/guide/usage/formatter), matching the toolchain
+NestJS 12 adopts by default.
+
+```bash
+npm test            # vitest
+npm run typecheck   # tsc --noEmit
+npm run lint        # oxlint src        (npm run lint:fix to autofix)
+npm run format      # oxfmt src         (npm run format:check in CI)
+npm run build       # tsup
+```
+
+Config lives in `.oxlintrc.json` (rules aligned with the NestJS 12 preset) and
+`.oxfmtrc.json`.
+
 ## License
 
 MIT © Maxence Guyonvarho

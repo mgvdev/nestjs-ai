@@ -59,6 +59,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint --fix src",
+    "format": "oxfmt src",
+    "format:check": "oxfmt --check src",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
@@ -135,6 +139,8 @@
     "ai": "^7.0.17",
     "better-sqlite3": "^12.11.1",
     "msw": "^2.15.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
