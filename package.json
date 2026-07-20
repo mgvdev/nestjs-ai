@@ -1,6 +1,6 @@
 {
   "name": "@mgvdev/nestjs-ai",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Structured AI toolkit for NestJS — agents, tools, structured output, streaming and embeddings on top of the Vercel AI SDK.",
   "author": "Maxence Guyonvarho",
   "license": "MIT",
