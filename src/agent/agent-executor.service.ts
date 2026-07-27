@@ -64,6 +64,7 @@ export class AgentExecutorService {
         await this.prepareRun(agent, input, opts);
       const schema = opts.schema ?? meta.output;
       const maxSteps = this.resolveMaxSteps(opts, meta);
+      const providerOptions = this.resolveProviderOptions(opts, meta);
 
       const result = schema
         ? await this.runObject<T>(
@@ -73,6 +74,7 @@ export class AgentExecutorService {
             schema,
             opts,
             newMessages,
+            providerOptions,
           )
         : await this.runText<T>(
             model,
@@ -82,6 +84,7 @@ export class AgentExecutorService {
             maxSteps,
             opts,
             newMessages,
+            providerOptions,
           );
 
       this.usageTracker?.record({
@@ -114,6 +117,7 @@ export class AgentExecutorService {
     schema: NonNullable<AgentRunOptions['schema']>,
     opts: AgentRunOptions,
     newMessages: AiMessage[],
+    providerOptions: Record<string, Record<string, any>> | undefined,
   ): Promise<AgentResult<T>> {
     const result = await generateObject({
       model,
@@ -124,6 +128,7 @@ export class AgentExecutorService {
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
       maxRetries: opts.maxRetries ?? this.options.maxRetries,
+      providerOptions,
       experimental_telemetry: this.telemetry(),
     });
     await this.persist(opts.conversationId, newMessages, [
@@ -146,6 +151,7 @@ export class AgentExecutorService {
     maxSteps: number,
     opts: AgentRunOptions,
     newMessages: AiMessage[],
+    providerOptions: Record<string, Record<string, any>> | undefined,
   ): Promise<AgentResult<T>> {
     const result = await generateText({
       model,
@@ -157,6 +163,7 @@ export class AgentExecutorService {
       abortSignal: opts.abortSignal,
       temperature: opts.temperature,
       maxRetries: opts.maxRetries ?? this.options.maxRetries,
+      providerOptions,
       experimental_telemetry: this.telemetry(),
     });
     await this.persist(
@@ -193,6 +200,7 @@ export class AgentExecutorService {
       const modelId = (model as { modelId?: string }).modelId ?? 'unknown';
       const schema = opts.schema ?? meta.output;
       const maxSteps = this.resolveMaxSteps(opts, meta);
+      const providerOptions = this.resolveProviderOptions(opts, meta);
       let streamFailed = false;
       let errorReported = false;
       const reportErrorOnce = (error: unknown): void => {
@@ -217,6 +225,7 @@ export class AgentExecutorService {
           abortSignal: opts.abortSignal,
           temperature: opts.temperature,
           maxRetries: opts.maxRetries ?? this.options.maxRetries,
+          providerOptions,
           experimental_telemetry: this.telemetry(),
           onError: ({ error }) => {
             reportErrorOnce(error);
@@ -259,6 +268,7 @@ export class AgentExecutorService {
         abortSignal: opts.abortSignal,
         temperature: opts.temperature,
         maxRetries: opts.maxRetries ?? this.options.maxRetries,
+        providerOptions,
         experimental_telemetry: this.telemetry(),
         onError: ({ error }) => {
           reportErrorOnce(error);
@@ -404,6 +414,14 @@ export class AgentExecutorService {
       this.options.defaultMaxSteps ??
       DEFAULT_MAX_STEPS
     );
+  }
+
+  /** Per-call `providerOptions` overrides the agent-level default. */
+  private resolveProviderOptions(
+    opts: AgentRunOptions,
+    meta: AgentOptions,
+  ): Record<string, Record<string, any>> | undefined {
+    return opts.providerOptions ?? meta.providerOptions;
   }
 
   private async loadHistory(conversationId?: string) {

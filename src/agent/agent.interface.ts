@@ -31,6 +31,12 @@ export interface AgentRunOptions {
   schema?: ZodType<any, any, any>;
   /** Sampling temperature. */
   temperature?: number;
+  /**
+   * Provider-specific options forwarded to the underlying model, e.g. Anthropic
+   * prompt caching (`{ anthropic: { cacheControl: { type: 'ephemeral' } } }`) or
+   * OpenAI reasoning effort. Overrides the agent's `providerOptions` for this call.
+   */
+  providerOptions?: Record<string, Record<string, any>>;
   /** Abort signal to cancel the underlying request. */
   abortSignal?: AbortSignal;
 }

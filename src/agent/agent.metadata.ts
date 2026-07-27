@@ -18,4 +18,10 @@ export interface AgentOptions {
   output?: ZodType<any, any, any>;
   /** Per-run budget limits, overriding global module options. */
   budget?: BudgetLimits;
+  /**
+   * Provider-specific options forwarded to the underlying model, e.g. Anthropic
+   * prompt caching or OpenAI reasoning effort. A per-call `providerOptions`
+   * overrides this default.
+   */
+  providerOptions?: Record<string, Record<string, any>>;
 }

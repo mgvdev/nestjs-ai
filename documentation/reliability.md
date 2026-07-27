@@ -17,6 +17,27 @@ await agent.run(prompt, { model: ['openai:gpt-4o', 'openai:gpt-4o-mini'], maxRet
 
 Build a composite model manually with `createFallbackModel(models, { shouldRetry })`.
 
+## Provider-specific options
+
+Forward per-provider knobs (Anthropic prompt caching, OpenAI reasoning effort, …)
+to the underlying model through `providerOptions`. Set an agent-level default on
+`@Agent`, or pass it per call — a per-call value overrides the agent default, and
+it works on both `run()` and `stream()`.
+
+```ts
+@Agent({
+  model: 'anthropic:claude-sonnet-4',
+  providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+})
+export class CachedAgent extends AiAgent {}
+
+// per-call override
+await agent.run(prompt, { providerOptions: { openai: { reasoningEffort: 'high' } } });
+```
+
+The value is passed straight through to the Vercel AI SDK's `providerOptions`, so
+any key that SDK supports for the active provider is valid.
+
 ## Caching
 
 Memoize model responses (via middleware) and single embeddings.

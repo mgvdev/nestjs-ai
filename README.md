@@ -421,6 +421,26 @@ export class ResilientAgent extends AiAgent {}
 await agent.run(prompt, { maxRetries: 3 });
 ```
 
+## Provider-specific options
+
+Forward per-provider knobs to the underlying model via `providerOptions` — set an
+agent-level default with `@Agent`, or override it per call. Common uses: Anthropic
+prompt caching, OpenAI reasoning effort.
+
+```ts
+// Agent-level default (Anthropic prompt caching)
+@Agent({
+  model: 'anthropic:claude-sonnet-5',
+  providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+})
+export class CachedAgent extends AiAgent {}
+
+// Per-call override (wins over the agent default); works on run() and stream()
+await agent.run(prompt, {
+  providerOptions: { openai: { reasoningEffort: 'high' } },
+});
+```
+
 ## Caching
 
 Configure a cache to memoize model responses (via middleware) and single

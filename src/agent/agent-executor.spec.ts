@@ -94,6 +94,12 @@ class SentimentAgent extends AiAgent implements OnBudgetExceeded {
   }
 }
 
+@Agent({
+  model: 'openai:gpt-4o',
+  providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+})
+class ProviderOptionsAgent extends AiAgent {}
+
 @Agent({ model: 'openai:gpt-4o' })
 class StreamingBudgetAgent extends AiAgent implements OnBudgetExceeded {
   after = 0;
@@ -533,6 +539,67 @@ describe('AgentExecutorService (integration)', () => {
       moduleRef.get(BlockingBudgetAgent).stream('blocked'),
     ).rejects.toThrow('no-credits-left');
     expect((currentModel as MockLanguageModelV3).doStreamCalls).toHaveLength(0);
+    await moduleRef.close();
+  });
+
+  it('forwards per-call providerOptions to the model on run()', async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: {
+        content: [{ type: 'text', text: 'ok' }],
+        finishReason: 'stop',
+        usage: USAGE,
+        warnings: [],
+      },
+    });
+    const moduleRef = await bootstrapWith({
+      providers: [ProviderOptionsAgent],
+    });
+
+    await moduleRef.get(ProviderOptionsAgent).run('hi', {
+      providerOptions: { openai: { reasoningEffort: 'high' } },
+    });
+
+    expect(
+      (currentModel as MockLanguageModelV3).doGenerateCalls[0].providerOptions,
+    ).toEqual({ openai: { reasoningEffort: 'high' } });
+    await moduleRef.close();
+  });
+
+  it('falls back to the agent-level providerOptions default', async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: {
+        content: [{ type: 'text', text: 'ok' }],
+        finishReason: 'stop',
+        usage: USAGE,
+        warnings: [],
+      },
+    });
+    const moduleRef = await bootstrapWith({
+      providers: [ProviderOptionsAgent],
+    });
+
+    await moduleRef.get(ProviderOptionsAgent).run('hi');
+
+    expect(
+      (currentModel as MockLanguageModelV3).doGenerateCalls[0].providerOptions,
+    ).toEqual({ anthropic: { cacheControl: { type: 'ephemeral' } } });
+    await moduleRef.close();
+  });
+
+  it('forwards providerOptions on the streaming path', async () => {
+    currentModel = streamingModel('streamed');
+    const moduleRef = await bootstrapWith({
+      providers: [ProviderOptionsAgent],
+    });
+
+    const stream = await moduleRef.get(ProviderOptionsAgent).stream('hi', {
+      providerOptions: { openai: { reasoningEffort: 'low' } },
+    });
+    await drain(stream.textStream);
+
+    expect(
+      (currentModel as MockLanguageModelV3).doStreamCalls[0].providerOptions,
+    ).toEqual({ openai: { reasoningEffort: 'low' } });
     await moduleRef.close();
   });
 });

@@ -73,6 +73,7 @@ await agent.run(input, {
   schema,                      // structured output for this call
   temperature,
   maxRetries,
+  providerOptions,             // per-provider knobs (Anthropic cacheControl, …)
   recall: { query?, topK? },   // prepend semantic-memory context
   abortSignal,
 });
